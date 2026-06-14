@@ -1,0 +1,77 @@
+# Taskfile.yml for building Knot VSCode Extension
+version: "3"
+
+vars:
+  DIST_DIR: dist
+  VERSION:
+    sh: node -p "require('./package.json').version"
+
+tasks:
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf out
+      - rm -rf {{.DIST_DIR}}
+
+  install:
+    desc: Install dependencies
+    cmds:
+      - npm install
+
+  compile:
+    desc: Bundle the extension
+    cmds:
+      - npm run compile
+
+  watch:
+    desc: Watch for changes and rebundle
+    cmds:
+      - npm run watch
+
+  lint:
+    desc: Run linter
+    cmds:
+      - npm run lint
+
+  typecheck:
+    desc: Type-check with tsc
+    cmds:
+      - npm run typecheck
+
+  build:
+    desc: Build extension (bundle only)
+    deps: [compile]
+
+  package:
+    desc: Package extension as .vsix
+    deps: [compile]
+    cmds:
+      - mkdir -p {{.DIST_DIR}}
+      - npx vsce package --out {{.DIST_DIR}}/knot-{{.VERSION}}.vsix
+
+  release:
+    desc: Tag version and create GitHub release with .vsix file
+    deps: [package]
+    cmds:
+      - |
+        if git tag -l v{{.VERSION}} | grep -q v{{.VERSION}}; then
+          echo "Tag v{{.VERSION}} already exists, skipping tag creation"
+        else
+          echo "Creating tag v{{.VERSION}}"
+          git tag -a v{{.VERSION}} -m "Release {{.VERSION}}"
+          git push origin v{{.VERSION}}
+        fi
+        gh release create v{{.VERSION}} -t "Release {{.VERSION}}" -n "Knot VSCode Extension {{.VERSION}}" {{.DIST_DIR}}/knot-{{.VERSION}}.vsix
+
+  publish:
+    desc: Publish extension to VSCode Marketplace
+    deps: [package]
+    cmds:
+      - npx vsce publish --packagePath {{.DIST_DIR}}/knot-{{.VERSION}}.vsix
+
+  publish-release:
+    desc: Publish to marketplace and create GitHub release
+    deps: [package]
+    cmds:
+      - task: publish
+      - task: release
