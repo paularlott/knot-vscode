@@ -3,6 +3,8 @@ version: "3"
 
 vars:
   DIST_DIR: dist
+  NAME:
+    sh: node -p "require('./package.json').name"
   VERSION:
     sh: node -p "require('./package.json').version"
 
@@ -47,7 +49,7 @@ tasks:
     deps: [compile]
     cmds:
       - mkdir -p {{.DIST_DIR}}
-      - npx vsce package --out {{.DIST_DIR}}/knot-{{.VERSION}}.vsix
+      - npx vsce package --out {{.DIST_DIR}}/{{.NAME}}-{{.VERSION}}.vsix
 
   release:
     desc: Tag version and create GitHub release with .vsix file
@@ -61,13 +63,13 @@ tasks:
           git tag -a v{{.VERSION}} -m "Release {{.VERSION}}"
           git push origin v{{.VERSION}}
         fi
-        gh release create v{{.VERSION}} -t "Release {{.VERSION}}" -n "Knot VSCode Extension {{.VERSION}}" {{.DIST_DIR}}/knot-{{.VERSION}}.vsix
+        gh release create v{{.VERSION}} -t "Release {{.VERSION}}" -n "Knot VSCode Extension {{.VERSION}}" {{.DIST_DIR}}/{{.NAME}}-{{.VERSION}}.vsix
 
   publish:
     desc: Publish extension to VSCode Marketplace
     deps: [package]
     cmds:
-      - npx vsce publish --packagePath {{.DIST_DIR}}/knot-{{.VERSION}}.vsix
+      - npx vsce publish --packagePath {{.DIST_DIR}}/{{.NAME}}-{{.VERSION}}.vsix
 
   publish-release:
     desc: Publish to marketplace and create GitHub release
