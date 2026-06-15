@@ -52,7 +52,7 @@ export function registerCommands(ctx: CommandContext): vscode.Disposable[] {
 // ---------------------------------------------------------------------------
 
 async function cmdAddServer(ctx: CommandContext): Promise<void> {
-    const input = await promptServer(ctx, undefined);
+    const input = await promptServer(undefined);
     if (!input) {
         return;
     }
@@ -73,7 +73,7 @@ async function cmdEditServer(ctx: CommandContext, serverId?: string): Promise<vo
     if (!server) {
         return;
     }
-    const input = await promptServer(ctx, server);
+    const input = await promptServer(server);
     if (!input) {
         return;
     }
@@ -112,7 +112,7 @@ interface ServerInput {
 }
 
 /** Prompt for address / optional name / token (+ insecure). Prefilled when editing. */
-async function promptServer(ctx: CommandContext, existing: ServerConfig | undefined): Promise<ServerInput | undefined> {
+async function promptServer(existing: ServerConfig | undefined): Promise<ServerInput | undefined> {
     const address = await vscode.window.showInputBox({
         prompt: 'Knot server URL',
         value: existing?.address ?? '',

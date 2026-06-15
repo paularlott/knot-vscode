@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.2
+
+- Terminal now closes automatically when the remote session ends (e.g. `exit` or connection drop) instead of lingering in the panel.
+
 ## 0.2.1
 
 - View title now shows Create Space, Create Stack, Add Server, Refresh (in that order).

@@ -41,6 +41,7 @@ export function createKnotTerminal(opts: KnotTerminalOptions): vscode.Terminal {
     const onDidClose = new vscode.EventEmitter<number | void>();
     let ws: WebSocket | undefined;
     let closed = false;
+    let closeSub: vscode.Disposable | undefined;
 
     const writeOut = (s: string) => onDidWrite.fire(s);
     const writeErr = (s: string) => onDidWrite.fire(s);
@@ -67,6 +68,8 @@ export function createKnotTerminal(opts: KnotTerminalOptions): vscode.Terminal {
             }
             ws = undefined;
         }
+        closeSub?.dispose();
+        closeSub = undefined;
         onDidWrite.dispose();
         onDidClose.dispose();
     }
@@ -131,8 +134,22 @@ export function createKnotTerminal(opts: KnotTerminalOptions): vscode.Terminal {
         },
     };
 
-    return vscode.window.createTerminal({
+    const terminal = vscode.window.createTerminal({
         name: `knot: ${opts.space.name || opts.space.space_id}`,
         pty,
     });
+
+    // When the remote session ends (e.g. user types `exit`, or the connection
+    // drops), dispose the terminal so it doesn't linger in the panel.
+    closeSub = onDidClose.event(() => {
+        setTimeout(() => {
+            try {
+                terminal.dispose();
+            } catch {
+                // already disposed
+            }
+        }, 150);
+    });
+
+    return terminal;
 }

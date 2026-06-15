@@ -1,4 +1,4 @@
-import { HttpClient, KnotHttpError } from './http';
+import { HttpClient } from './http';
 import type {
     CreateSpaceResponse,
     PortApplyRequest,
