@@ -5,6 +5,12 @@ export interface CustomFieldValue {
     value: string;
 }
 
+/** A custom field definition on a template. */
+export interface CustomFieldDef {
+    name: string;
+    description: string;
+}
+
 export interface AltNameEntry {
     name: string;
     port?: number;
@@ -127,7 +133,7 @@ export interface WriteFileResponse {
 }
 
 export interface UserResponse {
-    id: string;
+    user_id: string;
     username: string;
     email: string;
     service_password: string;
@@ -157,6 +163,7 @@ export interface Template {
     icon_url: string;
     usage: number;
     deployed: number;
+    custom_fields?: CustomFieldDef[];
     [key: string]: unknown;
 }
 
@@ -167,4 +174,60 @@ export interface TemplateList {
 
 export interface ApiError {
     error: string;
+}
+
+// ---- Stack definitions ----
+
+export interface StackDefCustomField {
+    name: string;
+    value: string;
+}
+
+export interface StackDefPortForward {
+    to_space: string;
+    local_port: number;
+    remote_port: number;
+}
+
+export interface StackDefSpace {
+    name: string;
+    template_id: string;
+    description: string;
+    shell: string;
+    startup_script_id?: string;
+    depends_on: string[];
+    custom_fields: StackDefCustomField[];
+    port_forwards: StackDefPortForward[];
+}
+
+export interface StackDefinitionInfo {
+    stack_definition_id: string;
+    user_id?: string;
+    name: string;
+    description: string;
+    active: boolean;
+    scope?: string;
+    groups?: string[];
+    zones?: string[];
+    spaces: StackDefSpace[];
+    is_managed?: boolean;
+    [key: string]: unknown;
+}
+
+export interface StackDefinitionList {
+    count: number;
+    stack_definitions: StackDefinitionInfo[];
+}
+
+// ---- Port forwarding (space-io) ----
+
+export interface PortForwardRequest {
+    local_port: number;
+    space: string;
+    remote_port: number;
+    persistent: boolean;
+}
+
+export interface PortApplyRequest {
+    forwards: PortForwardRequest[];
 }

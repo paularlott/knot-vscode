@@ -1,6 +1,7 @@
 import { HttpClient, KnotHttpError } from './http';
 import type {
     CreateSpaceResponse,
+    PortApplyRequest,
     ReadFileRequest,
     ReadFileResponse,
     RunCommandRequest,
@@ -9,6 +10,7 @@ import type {
     SpaceInfo,
     SpaceInfoList,
     SpaceRequest,
+    StackDefinitionList,
     TemplateList,
     UserResponse,
     WriteFileRequest,
@@ -84,33 +86,53 @@ export class KnotClient {
     }
 
     // ---- Run command / files ----
+    /** Runs a command; throws if the space reports failure (success:false). */
     runCommand(spaceId: string, req: RunCommandRequest): Promise<RunCommandResponse> {
-        return this.http.post<RunCommandResponse>(
-            `/api/spaces/${encodeURIComponent(spaceId)}/run-command`,
-            req,
-            200,
-        );
+        return this.http
+            .post<RunCommandResponse>(`/api/spaces/${encodeURIComponent(spaceId)}/run-command`, req, 200)
+            .then((res) => {
+                if (!res.success) {
+                    throw new Error(res.error || 'command failed');
+                }
+                return res;
+            });
     }
 
     readFile(spaceId: string, req: ReadFileRequest): Promise<ReadFileResponse> {
-        return this.http.post<ReadFileResponse>(
-            `/api/spaces/${encodeURIComponent(spaceId)}/files/read`,
-            req,
-            200,
-        );
+        return this.http
+            .post<ReadFileResponse>(`/api/spaces/${encodeURIComponent(spaceId)}/files/read`, req, 200)
+            .then((res) => {
+                if (!res.success) {
+                    throw new Error(res.error || 'failed to read file');
+                }
+                return res;
+            });
     }
 
     writeFile(spaceId: string, req: WriteFileRequest): Promise<WriteFileResponse> {
-        return this.http.post<WriteFileResponse>(
-            `/api/spaces/${encodeURIComponent(spaceId)}/files/write`,
-            req,
-            200,
-        );
+        return this.http
+            .post<WriteFileResponse>(`/api/spaces/${encodeURIComponent(spaceId)}/files/write`, req, 200)
+            .then((res) => {
+                if (!res.success) {
+                    throw new Error(res.error || 'failed to write file');
+                }
+                return res;
+            });
     }
 
     // ---- Templates ----
     listTemplates(): Promise<TemplateList> {
         return this.http.get<TemplateList>('/api/templates');
+    }
+
+    // ---- Stack definitions ----
+    listStackDefinitions(): Promise<StackDefinitionList> {
+        return this.http.get<StackDefinitionList>('/api/stack-definitions');
+    }
+
+    // ---- Port forwarding (space-io) ----
+    applyPorts(spaceId: string, req: PortApplyRequest): Promise<void> {
+        return this.http.post(`/space-io/${encodeURIComponent(spaceId)}/port/apply`, req, 200);
     }
 
     // ---- Helpers ----

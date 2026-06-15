@@ -1,5 +1,19 @@
 # Change Log
 
+## 0.2.1
+
+- View title now shows Create Space, Create Stack, Add Server, Refresh (in that order).
+
+## 0.2.0
+
+- **Multiple servers**: connect to any number of Knot servers. Each is a top-level node; add via name (optional) + address + token.
+- `Knot: Add Server`, `Knot: Edit Server` (change address / name / token), `Knot: Remove Server`.
+- Tree is now 3-level: Server → Stack → Space (standalone spaces sit under the server).
+- **Create space** now prompts for any custom fields defined by the chosen template.
+- **Create / Delete stack**: instantiate a stack from a stack definition (creates each component space, wires up dependencies and port forwards, with rollback on failure) and delete a stack plus all its spaces.
+- Servers (incl. tokens) stored in Secret Storage. Legacy single-server config auto-migrated on first load.
+- Removed the old single-server `knot.login` / `knot.logout`.
+
 ## 0.1.3
 
 - Group spaces by stack in the tree (collapsible stack nodes).

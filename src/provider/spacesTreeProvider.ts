@@ -1,12 +1,9 @@
 import * as vscode from 'vscode';
 import type { SpaceInfo } from '../api/types';
+import type { ServerConfig } from '../serverStore';
+import { serverLabel } from '../serverStore';
 
-export type SpaceLifecycle =
-    | 'running'
-    | 'starting'
-    | 'stopped'
-    | 'deleting'
-    | 'unknown';
+export type SpaceLifecycle = 'running' | 'starting' | 'stopped' | 'deleting' | 'unknown';
 
 export function deriveLifecycle(s: SpaceInfo): SpaceLifecycle {
     if (s.is_deleting) {
@@ -54,7 +51,7 @@ function statusLabel(lifecycle: SpaceLifecycle): string {
     }
 }
 
-function buildContextValue(lifecycle: SpaceLifecycle, space: SpaceInfo): string {
+function buildSpaceContextValue(lifecycle: SpaceLifecycle, space: SpaceInfo): string {
     const flags: string[] = ['knot-space'];
     if (lifecycle === 'running') {
         flags.push('running');
@@ -75,6 +72,7 @@ export class SpaceItem extends vscode.TreeItem {
     constructor(
         readonly space: SpaceInfo,
         readonly lifecycle: SpaceLifecycle,
+        readonly serverId: string,
     ) {
         super(space.name || space.space_id, vscode.TreeItemCollapsibleState.None);
 
@@ -111,16 +109,15 @@ export class SpaceItem extends vscode.TreeItem {
         this.tooltip = new vscode.MarkdownString(tooltipLines.join('  \n'));
 
         this.iconPath = iconFor(lifecycle);
-        this.contextValue = buildContextValue(lifecycle, space);
-        // No command on click: selecting a row should never spawn a terminal.
+        this.contextValue = buildSpaceContextValue(lifecycle, space);
     }
 }
 
-/** A collapsible group of spaces sharing a stack name. */
+/** A collapsible group of spaces sharing a stack name, within one server. */
 export class StackItem extends vscode.TreeItem {
     readonly children: SpaceItem[] = [];
 
-    constructor(readonly stackName: string) {
+    constructor(readonly stackName: string, readonly serverId: string) {
         super(stackName, vscode.TreeItemCollapsibleState.Expanded);
         this.iconPath = new vscode.ThemeIcon('layers');
         this.contextValue = 'knot-stack';
@@ -128,13 +125,68 @@ export class StackItem extends vscode.TreeItem {
     }
 }
 
+/** A configured server node. Stable id so expand/collapse state survives reloads. */
+export class ServerNode extends vscode.TreeItem {
+    children: vscode.TreeItem[] = [];
+
+    constructor(
+        readonly serverId: string,
+        config: ServerConfig,
+        status: ServerStatus,
+    ) {
+        super(serverLabel(config), vscode.TreeItemCollapsibleState.Expanded);
+        this.id = `server:${serverId}`;
+        this.iconPath = new vscode.ThemeIcon('server');
+        this.contextValue = 'knot-server';
+
+        const desc: string[] = [];
+        if (status === 'connecting') {
+            desc.push('connecting\u2026');
+        } else if (status === 'error') {
+            desc.push('error');
+        } else if (status === 'connected') {
+            desc.push('connected');
+        }
+        this.description = desc.join(', ');
+
+        const lines = [`**${serverLabel(config)}**`, `Address: ${config.address}`];
+        if (config.insecure) {
+            lines.push('TLS verification: disabled');
+        }
+        if (status === 'error') {
+            lines.push(`Status: error`);
+        }
+        this.tooltip = new vscode.MarkdownString(lines.join('  \n'));
+    }
+}
+
+export type ServerStatus = 'connecting' | 'connected' | 'error' | 'disconnected';
+
+export interface ServerView {
+    config: ServerConfig;
+    status: ServerStatus;
+    error?: string;
+    spaces?: SpaceInfo[];
+}
+
+class MessageItem extends vscode.TreeItem {
+    constructor(label: string, kind: 'info' | 'warn' | 'loading' = 'info') {
+        super(label, vscode.TreeItemCollapsibleState.None);
+        this.iconPath =
+            kind === 'loading'
+                ? new vscode.ThemeIcon('loading~spin')
+                : kind === 'warn'
+                  ? new vscode.ThemeIcon('warning', new vscode.ThemeColor('problemsWarningIcon.foreground'))
+                  : new vscode.ThemeIcon('info');
+        this.contextValue = 'knot-message';
+    }
+}
+
 export class SpacesTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private readonly _onDidChange = new vscode.EventEmitter<vscode.TreeItem | undefined>();
     readonly onDidChangeTreeData = this._onDidChange.event;
 
-    private roots: (StackItem | SpaceItem)[] = [];
-    private stacks: StackItem[] = [];
-    private spaces: SpaceItem[] = [];
+    private roots: ServerNode[] = [];
     private loading = false;
 
     refresh(): void {
@@ -146,14 +198,34 @@ export class SpacesTreeProvider implements vscode.TreeDataProvider<vscode.TreeIt
         this._onDidChange.fire(undefined);
     }
 
-    /** Flat snapshot of all space items (including those inside stacks). */
     getSpaces(): SpaceItem[] {
-        return this.spaces;
+        const out: SpaceItem[] = [];
+        for (const node of this.roots) {
+            this.collectSpaces(node.children, out);
+        }
+        return out;
     }
 
-    /** Snapshot of all stack nodes. */
+    private collectSpaces(items: vscode.TreeItem[], out: SpaceItem[]): void {
+        for (const item of items) {
+            if (item instanceof StackItem) {
+                out.push(...item.children);
+            } else if (item instanceof SpaceItem) {
+                out.push(item);
+            }
+        }
+    }
+
     getStacks(): StackItem[] {
-        return this.stacks;
+        const out: StackItem[] = [];
+        for (const node of this.roots) {
+            for (const child of node.children) {
+                if (child instanceof StackItem) {
+                    out.push(child);
+                }
+            }
+        }
+        return out;
     }
 
     getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
@@ -161,6 +233,9 @@ export class SpacesTreeProvider implements vscode.TreeDataProvider<vscode.TreeIt
     }
 
     getChildren(element?: vscode.TreeItem): vscode.TreeItem[] {
+        if (element instanceof ServerNode) {
+            return element.children;
+        }
         if (element instanceof StackItem) {
             return element.children;
         }
@@ -168,78 +243,73 @@ export class SpacesTreeProvider implements vscode.TreeDataProvider<vscode.TreeIt
             return [];
         }
         if (this.loading && this.roots.length === 0) {
-            return [new LoadingItem()];
+            return [new MessageItem('Loading\u2026', 'loading')];
         }
         if (this.roots.length === 0) {
-            return [new EmptyItem()];
+            return [new MessageItem('No servers yet \u2014 click + to add one')];
         }
         return this.roots;
     }
 
-    setSpaces(spaces: SpaceInfo[]): void {
-        const groups = new Map<string, SpaceInfo[]>();
-        const standalone: SpaceInfo[] = [];
-        for (const s of spaces) {
-            if (s.stack) {
-                let bucket = groups.get(s.stack);
-                if (!bucket) {
-                    bucket = [];
-                    groups.set(s.stack, bucket);
-                }
-                bucket.push(s);
-            } else {
-                standalone.push(s);
-            }
-        }
-
-        const roots: (StackItem | SpaceItem)[] = [];
-        const stacks: StackItem[] = [];
-        const allSpaces: SpaceItem[] = [];
-
-        for (const name of [...groups.keys()].sort()) {
-            const stackSpaces = groups.get(name)!;
-            const stack = new StackItem(name);
-            stackSpaces
-                .sort((a, b) => (a.name || a.space_id).localeCompare(b.name || b.space_id))
-                .forEach((s) => {
-                    const item = new SpaceItem(s, deriveLifecycle(s));
-                    stack.children.push(item);
-                    allSpaces.push(item);
-                });
-            stack.description = `${stackSpaces.length} space${stackSpaces.length === 1 ? '' : 's'}`;
-            roots.push(stack);
-            stacks.push(stack);
-        }
-
-        standalone
-            .sort((a, b) => (a.name || a.space_id).localeCompare(b.name || b.space_id))
-            .forEach((s) => {
-                const item = new SpaceItem(s, deriveLifecycle(s));
-                roots.push(item);
-                allSpaces.push(item);
-            });
-
-        this.roots = roots;
-        this.stacks = stacks;
-        this.spaces = allSpaces;
+    /** Replace the entire tree from a set of per-server views. */
+    render(views: ServerView[]): void {
+        this.roots = views.map((view) => buildServerNode(view));
         this.loading = false;
         this._onDidChange.fire(undefined);
     }
 }
 
-class LoadingItem extends vscode.TreeItem {
-    constructor() {
-        super('Loading\u2026', vscode.TreeItemCollapsibleState.None);
-        this.iconPath = new vscode.ThemeIcon('loading~spin');
-        this.contextValue = 'knot-message';
-    }
-}
+function buildServerNode(view: ServerView): ServerNode {
+    const node = new ServerNode(view.config.id, view.config, view.status);
 
-class EmptyItem extends vscode.TreeItem {
-    constructor() {
-        super('No spaces', vscode.TreeItemCollapsibleState.None);
-        this.iconPath = new vscode.ThemeIcon('info');
-        this.contextValue = 'knot-message';
-        this.tooltip = 'No spaces visible. Create one with the + button, or refresh.';
+    if (view.status === 'connecting') {
+        node.children = [new MessageItem('Connecting\u2026', 'loading')];
+        return node;
     }
+    if (view.status === 'error') {
+        node.children = [new MessageItem(view.error || 'Connection failed', 'warn')];
+        return node;
+    }
+    if (view.status !== 'connected') {
+        node.children = [new MessageItem('Disconnected')];
+        return node;
+    }
+
+    const spaces = view.spaces ?? [];
+    if (spaces.length === 0) {
+        node.children = [new MessageItem('No spaces')];
+        return node;
+    }
+
+    const groups = new Map<string, SpaceInfo[]>();
+    const standalone: SpaceInfo[] = [];
+    for (const s of spaces) {
+        if (s.stack) {
+            let bucket = groups.get(s.stack);
+            if (!bucket) {
+                bucket = [];
+                groups.set(s.stack, bucket);
+            }
+            bucket.push(s);
+        } else {
+            standalone.push(s);
+        }
+    }
+
+    const children: (StackItem | SpaceItem)[] = [];
+    for (const name of [...groups.keys()].sort()) {
+        const stack = new StackItem(name, view.config.id);
+        groups
+            .get(name)!
+            .sort((a, b) => (a.name || a.space_id).localeCompare(b.name || b.space_id))
+            .forEach((s) => stack.children.push(new SpaceItem(s, deriveLifecycle(s), view.config.id)));
+        stack.description = `${stack.children.length} space${stack.children.length === 1 ? '' : 's'}`;
+        children.push(stack);
+    }
+    standalone
+        .sort((a, b) => (a.name || a.space_id).localeCompare(b.name || b.space_id))
+        .forEach((s) => children.push(new SpaceItem(s, deriveLifecycle(s), view.config.id)));
+
+    node.children = children;
+    return node;
 }
