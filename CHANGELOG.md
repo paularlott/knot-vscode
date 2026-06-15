@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.3
+
+- Space lifecycle inline icons (start / stop / restart) are now coloured and keep their colour when the row is selected, instead of turning white.
+
 ## 0.2.2
 
 - Terminal now closes automatically when the remote session ends (e.g. `exit` or connection drop) instead of lingering in the panel.

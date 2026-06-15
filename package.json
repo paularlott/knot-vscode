@@ -2,7 +2,7 @@
   "name": "knot",
   "displayName": "Knot",
   "description": "Manage Knot cloud development environments from VS Code: list, create, start/stop/restart, web terminal, and run commands in spaces.",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "publisher": "paularlott",
   "license": "Apache-2.0",
   "repository": {
@@ -87,37 +87,37 @@
         "command": "knot.startSpace",
         "title": "Start",
         "category": "Knot",
-        "icon": "$(debug-start)"
+        "icon": { "light": "media/start-light.svg", "dark": "media/start-dark.svg" }
       },
       {
         "command": "knot.stopSpace",
         "title": "Stop",
         "category": "Knot",
-        "icon": "$(debug-stop)"
+        "icon": { "light": "media/stop-light.svg", "dark": "media/stop-dark.svg" }
       },
       {
         "command": "knot.restartSpace",
         "title": "Restart",
         "category": "Knot",
-        "icon": "$(debug-restart)"
+        "icon": { "light": "media/restart-light.svg", "dark": "media/restart-dark.svg" }
       },
       {
         "command": "knot.startStack",
         "title": "Start Stack",
         "category": "Knot",
-        "icon": "$(debug-start)"
+        "icon": { "light": "media/start-light.svg", "dark": "media/start-dark.svg" }
       },
       {
         "command": "knot.stopStack",
         "title": "Stop Stack",
         "category": "Knot",
-        "icon": "$(debug-stop)"
+        "icon": { "light": "media/stop-light.svg", "dark": "media/stop-dark.svg" }
       },
       {
         "command": "knot.restartStack",
         "title": "Restart Stack",
         "category": "Knot",
-        "icon": "$(debug-restart)"
+        "icon": { "light": "media/restart-light.svg", "dark": "media/restart-dark.svg" }
       },
       {
         "command": "knot.createStack",
