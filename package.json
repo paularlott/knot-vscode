@@ -2,7 +2,7 @@
   "name": "knot-vscode",
   "displayName": "Knot",
   "description": "Manage Knot cloud development environments from VS Code: list, create, start/stop/restart, web terminal, and run commands in spaces.",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "publisher": "paularlott",
   "license": "Apache-2.0",
   "repository": {
@@ -75,7 +75,7 @@
         "command": "knot.createSpace",
         "title": "Create Space",
         "category": "Knot",
-        "icon": "$(add)"
+        "icon": { "light": "media/create-space-light.svg", "dark": "media/create-space-dark.svg" }
       },
       {
         "command": "knot.deleteSpace",
@@ -123,7 +123,7 @@
         "command": "knot.createStack",
         "title": "Create Stack",
         "category": "Knot",
-        "icon": { "light": "media/add-stack-light.svg", "dark": "media/add-stack-dark.svg" }
+        "icon": { "light": "media/create-stack-light.svg", "dark": "media/create-stack-dark.svg" }
       },
       {
         "command": "knot.deleteStack",
@@ -159,27 +159,27 @@
     "menus": {
       "view/title": [
         {
-          "command": "knot.createSpace",
+          "command": "knot.addServer",
           "when": "view == knot.spaces",
           "group": "navigation@1"
         },
         {
-          "command": "knot.createStack",
-          "when": "view == knot.spaces",
-          "group": "navigation@2"
-        },
-        {
-          "command": "knot.addServer",
-          "when": "view == knot.spaces",
-          "group": "navigation@3"
-        },
-        {
           "command": "knot.refresh",
           "when": "view == knot.spaces",
-          "group": "navigation@4"
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
+        {
+          "command": "knot.createSpace",
+          "when": "view == knot.spaces && viewItem == knot-server",
+          "group": "inline@1"
+        },
+        {
+          "command": "knot.createStack",
+          "when": "view == knot.spaces && viewItem == knot-server",
+          "group": "inline@2"
+        },
         {
           "command": "knot.createSpace",
           "when": "view == knot.spaces && viewItem == knot-server",

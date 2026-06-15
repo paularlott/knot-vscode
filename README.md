@@ -23,7 +23,7 @@ Manage [Knot](https://getknot.dev) cloud development environments directly from 
    - Create a token in the Knot web UI.
 4. Spaces for that server appear under its node. Add as many servers as you like.
 
-The view title also offers **Create Space**, **Create Stack**, **Add Server**, and **Refresh**.
+The view title has **Add Server** and **Refresh**. Each server node shows inline **Create Space** (`+`) and **Create Stack** (stack `+`) buttons on its row, plus a right-click menu.
 
 Servers (including their tokens) are stored securely in VS Code's Secret Storage.
 
