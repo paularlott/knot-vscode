@@ -1,10 +1,14 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
+import { spawn, spawnSync } from 'child_process';
 import type { CustomFieldValue, PortForwardRequest, SpaceRequest, StackDefinitionInfo, StackDefSpace, Template } from './api/types';
 import { describeError, defaultInsecure } from './session';
 import type { ConnectedServer, ServerConfig, ServerStore } from './serverStore';
 import { serverLabel } from './serverStore';
 import { SpaceItem, SpacesTreeProvider, StackItem } from './provider/spacesTreeProvider';
 import { createKnotTerminal } from './terminal/knotTerminal';
+import { upsertKnotHost, removeKnotHost, removeKnotAliasBlock, aliasForServer } from './ssh';
 
 export interface CommandContext {
     store: ServerStore;
@@ -44,6 +48,7 @@ export function registerCommands(ctx: CommandContext): vscode.Disposable[] {
         vscode.commands.registerCommand('knot.runCommand', (item?: SpaceItem) => cmdRunCommand(ctx, item)),
         vscode.commands.registerCommand('knot.openCodeServer', (item?: SpaceItem) => cmdOpenUrl(ctx, item, 'code-server')),
         vscode.commands.registerCommand('knot.openInBrowser', (item?: SpaceItem) => cmdOpenUrl(ctx, item, 'space')),
+        vscode.commands.registerCommand('knot.openInVscode', (item?: SpaceItem) => cmdOpenInVscode(ctx, item)),
     ];
 }
 
@@ -100,6 +105,11 @@ async function cmdRemoveServer(ctx: CommandContext, serverId?: string): Promise<
         return;
     }
     await ctx.store.remove(server.id);
+    try {
+        removeKnotAliasBlock(aliasForServer(server.id));
+    } catch {
+        // best-effort: config cleanup must not block removal
+    }
     await ctx.reload();
     vscode.window.showInformationMessage(`Knot: removed "${serverLabel(server)}".`);
 }
@@ -441,6 +451,13 @@ async function cmdDeleteSpace(ctx: CommandContext, item?: SpaceItem): Promise<vo
         async () => {
             try {
                 await conn.client.deleteSpace(space.space.space_id);
+                // Prune the space's SSH host (if any) from ~/.ssh/config.
+                try {
+                    const alias = aliasForServer(space.serverId);
+                    removeKnotHost(alias, `knot.${space.space.name}.${alias}`);
+                } catch {
+                    // best-effort
+                }
                 await ctx.reloadServer(space.serverId);
             } catch (err) {
                 vscode.window.showErrorMessage(`Knot: ${describeError(err)}`);
@@ -626,6 +643,125 @@ async function cmdOpenUrl(ctx: CommandContext, item: SpaceItem | undefined, kind
     const id = space.space.space_id;
     const url = kind === 'code-server' ? `${server.address}/proxy/spaces/${id}/code-server/` : `${server.address}/space/${id}`;
     void vscode.env.openExternal(vscode.Uri.parse(url));
+}
+
+function getCliPath(): string {
+    return vscode.workspace.getConfiguration('knot').get<string>('cliPath', '').trim() || 'knot';
+}
+
+function cliAvailable(cliPath: string): boolean {
+    if (path.isAbsolute(cliPath)) {
+        return fs.existsSync(cliPath);
+    }
+    const isWin = process.platform === 'win32';
+    const cmd = isWin ? `where ${JSON.stringify(cliPath)}` : `command -v ${JSON.stringify(cliPath)}`;
+    const r = isWin ? spawnSync('cmd', ['/c', cmd], { stdio: 'ignore' }) : spawnSync('sh', ['-c', cmd], { stdio: 'ignore' });
+    return r.status === 0;
+}
+
+/** Shell-quote a value for use in ~/.ssh/config ProxyCommand; only quotes when needed. */
+function shellQuote(s: string): string {
+    if (s === '') {
+        return `''`;
+    }
+    if (/^[A-Za-z0-9@%+=:,./_-]+$/.test(s)) {
+        return s;
+    }
+    return `'${s.replace(/'/g, `'\\''`)}'`;
+}
+
+/** Double-quote a value for the ProxyCommand, escaping \ and ". */
+function doubleQuote(s: string): string {
+    return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+/** Open the space in a new VSCode window via Remote-SSH, using the knot CLI as the SSH proxy. */
+async function cmdOpenInVscode(ctx: CommandContext, item?: SpaceItem): Promise<void> {
+    const space = item ?? (await pickSpace(ctx));
+    if (!space) {
+        return;
+    }
+    if (!space.space.is_deployed || !space.space.has_ssh) {
+        vscode.window.showWarningMessage(`Knot: "${space.space.name}" has no SSH available (start the space first).`);
+        return;
+    }
+    const server = ctx.store.get(space.serverId);
+    if (!server) {
+        vscode.window.showErrorMessage('Knot: server not found.');
+        return;
+    }
+
+    const cliPath = getCliPath();
+    if (!cliAvailable(cliPath)) {
+        const action = await vscode.window.showErrorMessage(
+            `Knot: CLI "${cliPath}" not found. Install the knot CLI or set "knot.cliPath".`,
+            'Open Settings',
+        );
+        if (action === 'Open Settings') {
+            void vscode.commands.executeCommand('workbench.action.openSettings', 'knot.cliPath');
+        }
+        return;
+    }
+
+    if (!vscode.extensions.getExtension('ms-vscode-remote.remote-ssh')) {
+        const action = await vscode.window.showErrorMessage(
+            'Knot: the Remote-SSH extension is required to open a space in VSCode.',
+            'Install',
+        );
+        if (action === 'Install') {
+            void vscode.commands.executeCommand('extension.open', 'ms-vscode-remote.remote-ssh');
+        }
+        return;
+    }
+
+    const alias = aliasForServer(server.id);
+    const host = `knot.${space.space.name}.${alias}`;
+    const proxy = [
+        shellQuote(cliPath),
+        'forward',
+        'ssh',
+        `--server=${doubleQuote(server.address)}`,
+        `--token=${doubleQuote(server.token)}`,
+        `--tls-skip-verify=${server.insecure}`,
+        shellQuote(space.space.name),
+    ].join(' ');
+
+    try {
+        upsertKnotHost(alias, { host, proxyCommand: proxy, comment: `space "${space.space.name}" on ${serverLabel(server)}` });
+    } catch (err) {
+        vscode.window.showErrorMessage(`Knot: failed to update SSH config: ${describeError(err)}`);
+        return;
+    }
+
+    const remotePath = space.space.username ? `/home/${space.space.username}` : '/';
+    const uri = `vscode-remote://ssh-remote+${host}${remotePath}`;
+    await openRemoteWindow(uri);
+}
+
+/** Open a vscode-remote:// URI in a new window via the running VS Code's CLI. */
+function openRemoteWindow(folderUri: string): Promise<void> {
+    return new Promise((resolve) => {
+        const isWin = process.platform === 'win32';
+        const bundled = path.join(vscode.env.appRoot, 'bin', isWin ? 'code.cmd' : 'code');
+        const bin = fs.existsSync(bundled) ? bundled : 'code';
+        try {
+            const child = spawn(bin, ['--folder-uri', folderUri], {
+                detached: true,
+                stdio: 'ignore',
+                shell: isWin,
+            });
+            child.on('error', () => {
+                vscode.window.showErrorMessage(
+                    `Knot: could not launch VS Code to open the space. Run manually: code --folder-uri "${folderUri}"`,
+                );
+            });
+            child.unref();
+            resolve();
+        } catch (err) {
+            vscode.window.showErrorMessage(`Knot: failed to open VS Code: ${describeError(err)}`);
+            resolve();
+        }
+    });
 }
 
 // ---------------------------------------------------------------------------

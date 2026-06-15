@@ -12,6 +12,7 @@ Manage [Knot](https://getknot.dev) cloud development environments directly from 
 - **Create & delete** spaces by picking a template and naming it (with an optional start-on-create prompt). Custom fields defined by the template are prompted for at create time.
 - **Native web terminal** — open an interactive terminal into any running space (per-server credentials), bridged to Knot's web-terminal WebSocket.
 - **Run commands** in a space and view the output in an editor.
+- **Open in VSCode** — open a running, SSH-enabled space in a new VSCode window via Remote-SSH (the extension wires up `~/.ssh/config` and uses the `knot` CLI as the SSH proxy).
 - **Open code-server** or the space's web page in your browser.
 - **Auto-refresh** — polls for status changes **only while the Knot view is visible**, with a short burst-poll right after lifecycle actions.
 
@@ -26,6 +27,16 @@ Manage [Knot](https://getknot.dev) cloud development environments directly from 
 The view title has **Add Server** and **Refresh**. Each server node shows inline **Create Space** (`+`) and **Create Stack** (stack `+`) buttons on its row, plus a right-click menu.
 
 Servers (including their tokens) are stored securely in VS Code's Secret Storage.
+
+## Requirements
+
+- A running **knot** server — see the [quick start](https://getknot.dev/docs/quick-start/).
+- An **API token** — create one in the knot web UI (*Profile → Tokens*) or via the CLI (`knot admin`).
+- For **Open in VSCode** (Remote-SSH):
+  - The **knot CLI** installed and on your `PATH` (or set `knot.cliPath` to its location). The extension calls it as the SSH `ProxyCommand`.
+  - The **Remote - SSH** extension (`ms-vscode-remote.remote-ssh`). The plugin warns and offers to install it if missing.
+
+When you use **Open in VSCode**, the extension writes host entries straight into `~/.ssh/config`, grouped under alias markers (`#===KNOT-START (KNOT_VSCODE_<server>)===`) — the same convention as `knot ssh-config update`, just under a `KNOT_VSCODE_*` alias so the two never clash.
 
 ## Managing servers
 
@@ -51,7 +62,8 @@ These are also available on a server node's context menu (right-click).
 | `Knot: Open Terminal`                | Interactive terminal in the space                                  |
 | `Knot: Run Command in Space`         | Run a one-off command                                              |
 | `Knot: Open Code-Server`             | Open code-server in a browser                                      |
-| `Knot: Open in Browser`              | Open the space page                                                |
+| `Knot: Open in Browser` | Open the space page |
+| `Knot: Open in VSCode` | Open the space in a new VSCode window via Remote-SSH |
 
 ## Configuration
 
