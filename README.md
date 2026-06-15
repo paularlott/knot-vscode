@@ -14,6 +14,7 @@ Manage [Knot](https://getknot.dev) cloud development environments directly from 
 - **Run commands** in a space and view the output in an editor.
 - **Open in VSCode** — open a running, SSH-enabled space in a new VSCode window via Remote-SSH (the extension wires up `~/.ssh/config` and uses the `knot` CLI as the SSH proxy).
 - **Open code-server** or the space's web page in your browser.
+- **Web ports** — running spaces that expose HTTP ports expand to show each dev URL (including alt-name aliases); click one to open it in your browser.
 - **Auto-refresh** — polls for status changes **only while the Knot view is visible**, with a short burst-poll right after lifecycle actions.
 
 ## Getting started

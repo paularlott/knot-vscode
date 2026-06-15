@@ -69,6 +69,8 @@ function buildSpaceContextValue(lifecycle: SpaceLifecycle, space: SpaceInfo): st
 }
 
 export class SpaceItem extends vscode.TreeItem {
+    readonly webPorts: WebPortItem[] = [];
+
     constructor(
         readonly space: SpaceInfo,
         readonly lifecycle: SpaceLifecycle,
@@ -133,6 +135,7 @@ export class ServerNode extends vscode.TreeItem {
         readonly serverId: string,
         config: ServerConfig,
         status: ServerStatus,
+        version?: string,
     ) {
         super(serverLabel(config), vscode.TreeItemCollapsibleState.Expanded);
         this.id = `server:${serverId}`;
@@ -147,9 +150,15 @@ export class ServerNode extends vscode.TreeItem {
         } else if (status === 'connected') {
             desc.push('connected');
         }
+        if (version) {
+            desc.push(`v${version}`);
+        }
         this.description = desc.join(', ');
 
         const lines = [`**${serverLabel(config)}**`, `Address: ${config.address}`];
+        if (version) {
+            lines.push(`Version: ${version}`);
+        }
         if (config.insecure) {
             lines.push('TLS verification: disabled');
         }
@@ -167,6 +176,12 @@ export interface ServerView {
     status: ServerStatus;
     error?: string;
     spaces?: SpaceInfo[];
+    /** knot server version. */
+    version?: string;
+    /** Server wildcard domain, used to build web-port URLs. */
+    wildcardDomain?: string;
+    /** Protocol derived from the server address. */
+    proto?: 'https' | 'http';
 }
 
 class MessageItem extends vscode.TreeItem {
@@ -239,6 +254,9 @@ export class SpacesTreeProvider implements vscode.TreeDataProvider<vscode.TreeIt
         if (element instanceof StackItem) {
             return element.children;
         }
+        if (element instanceof SpaceItem) {
+            return element.webPorts;
+        }
         if (element) {
             return [];
         }
@@ -260,7 +278,7 @@ export class SpacesTreeProvider implements vscode.TreeDataProvider<vscode.TreeIt
 }
 
 function buildServerNode(view: ServerView): ServerNode {
-    const node = new ServerNode(view.config.id, view.config, view.status);
+    const node = new ServerNode(view.config.id, view.config, view.status, view.version);
 
     if (view.status === 'connecting') {
         node.children = [new MessageItem('Connecting\u2026', 'loading')];
@@ -297,19 +315,81 @@ function buildServerNode(view: ServerView): ServerNode {
     }
 
     const children: (StackItem | SpaceItem)[] = [];
+    // Standalone spaces first (matches the web UI ordering), then stacks.
+    standalone
+        .sort((a, b) => (a.name || a.space_id).localeCompare(b.name || b.space_id))
+        .forEach((s) => children.push(makeSpaceItem(s, view)));
     for (const name of [...groups.keys()].sort()) {
         const stack = new StackItem(name, view.config.id);
         groups
             .get(name)!
             .sort((a, b) => (a.name || a.space_id).localeCompare(b.name || b.space_id))
-            .forEach((s) => stack.children.push(new SpaceItem(s, deriveLifecycle(s), view.config.id)));
+            .forEach((s) => stack.children.push(makeSpaceItem(s, view)));
         stack.description = `${stack.children.length} space${stack.children.length === 1 ? '' : 's'}`;
         children.push(stack);
     }
-    standalone
-        .sort((a, b) => (a.name || a.space_id).localeCompare(b.name || b.space_id))
-        .forEach((s) => children.push(new SpaceItem(s, deriveLifecycle(s), view.config.id)));
 
     node.children = children;
     return node;
+}
+
+/** A clickable web-port (dev URL) under a running space. */
+export class WebPortItem extends vscode.TreeItem {
+    constructor(label: string, readonly url: string) {
+        super(label, vscode.TreeItemCollapsibleState.None);
+        this.iconPath = new vscode.ThemeIcon('globe');
+        this.contextValue = 'knot-webport';
+        this.tooltip = url;
+        this.command = { command: 'knot.openWebPort', title: 'Open', arguments: [url] };
+    }
+}
+
+interface WebPortEntry {
+    name: string;
+    port: string;
+    label: string;
+}
+
+/** Build a SpaceItem and, for running spaces with web ports, its web-port children. */
+function makeSpaceItem(s: SpaceInfo, view: ServerView): SpaceItem {
+    const item = new SpaceItem(s, deriveLifecycle(s), view.config.id);
+    if (view.wildcardDomain && s.has_state && s.http_ports) {
+        const proto = view.proto ?? 'https';
+        for (const e of webPortEntries(s)) {
+            const url = buildWebPortUrl(proto, view.wildcardDomain!, s.username, e.name, e.port);
+            if (url) {
+                item.webPorts.push(new WebPortItem(e.label, url));
+            }
+        }
+        if (item.webPorts.length > 0) {
+            item.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+        }
+    }
+    return item;
+}
+
+/** Mirror of the web UI's getHttpPortEntries: http_ports plus alt-name aliases. */
+function webPortEntries(space: SpaceInfo): WebPortEntry[] {
+    const entries: WebPortEntry[] = [];
+    const ports = space.http_ports ?? {};
+    for (const [key, value] of Object.entries(ports)) {
+        entries.push({ name: space.name, port: key, label: key === value ? key : `${value} (${key})` });
+    }
+    for (const alt of space.alt_names ?? []) {
+        const portStr = String(alt.port ?? 0);
+        if ((alt.port ?? 0) > 0 && ports[portStr] !== undefined) {
+            entries.push({ name: alt.name, port: portStr, label: `${alt.name} (${ports[portStr]})` });
+        }
+    }
+    return entries;
+}
+
+/** Build the dev URL: <proto>//<user>--<name>--<port> substituted into the wildcard domain. */
+function buildWebPortUrl(proto: string, wildcard: string, user: string, name: string, port: string): string | undefined {
+    if (!wildcard) {
+        return undefined;
+    }
+    const sub = `${user}--${name}--${port}`.toLowerCase();
+    const host = wildcard.startsWith('*') ? wildcard.replace(/^\*/, sub) : `${sub}.${wildcard}`;
+    return `${proto}://${host}`;
 }

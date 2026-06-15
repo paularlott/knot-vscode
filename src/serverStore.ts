@@ -17,6 +17,10 @@ export interface ConnectedServer {
     config: ServerConfig;
     client: KnotClient;
     user: UserResponse;
+    /** knot server version (fetched at connect). */
+    version: string;
+    /** Server-wide wildcard domain (fetched at connect), used for web-port URLs. */
+    wildcardDomain: string;
 }
 
 const STORAGE_KEY = 'knot.servers';
@@ -130,7 +134,18 @@ export class ServerStore implements vscode.Disposable {
             if (!user.active) {
                 throw new Error('User is inactive.');
             }
-            const connected: ConnectedServer = { config, client, user };
+            // Best-effort: fetch server-wide info (e.g. wildcard domain). Older
+            // servers without /api/server-info just yield empty values.
+            let wildcardDomain = '';
+            let version = '';
+            try {
+                const info = await client.getServerInfo();
+                wildcardDomain = info.wildcard_domain ?? '';
+                version = info.version ?? '';
+            } catch {
+                // ignore — features degrade gracefully
+            }
+            const connected: ConnectedServer = { config, client, user, version, wildcardDomain };
             this.connections.set(id, connected);
             return connected;
         } catch (err) {

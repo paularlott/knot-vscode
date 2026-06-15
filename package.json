@@ -2,7 +2,7 @@
   "name": "knot-vscode",
   "displayName": "Knot",
   "description": "Manage Knot cloud development environments from VS Code: list, create, start/stop/restart, web terminal, and run commands in spaces.",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "paularlott",
   "license": "Apache-2.0",
   "repository": {
@@ -160,6 +160,12 @@
         "title": "Open in VSCode",
         "category": "Knot",
         "icon": "$(remote)"
+      },
+      {
+        "command": "knot.openWebPort",
+        "title": "Open Web Port",
+        "category": "Knot",
+        "icon": "$(globe)"
       }
     ],
     "menus": {

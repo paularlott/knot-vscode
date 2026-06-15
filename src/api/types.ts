@@ -154,6 +154,13 @@ export interface UserResponse {
     updated_at: string;
 }
 
+export interface ServerInfo {
+    /** knot server version string. */
+    version: string;
+    /** Server wildcard domain for space web-port URLs (e.g. "*.knot.example.com"). */
+    wildcard_domain: string;
+}
+
 export interface Template {
     template_id: string;
     name: string;

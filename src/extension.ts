@@ -22,12 +22,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const spaces = new Map<string, SpaceInfo[]>();
 
     function buildViews(): ServerView[] {
-        return store.list().map((config) => ({
-            config,
-            status: status.get(config.id) ?? 'disconnected',
-            error: errors.get(config.id),
-            spaces: spaces.get(config.id),
-        }));
+        return store.list().map((config) => {
+            const conn = store.getConnection(config.id);
+            const proto: 'https' | 'http' = config.address.startsWith('https://') ? 'https' : 'http';
+            return {
+                config,
+                status: status.get(config.id) ?? 'disconnected',
+                error: errors.get(config.id),
+                spaces: spaces.get(config.id),
+                version: conn?.version,
+                wildcardDomain: conn?.wildcardDomain,
+                proto,
+            };
+        });
     }
 
     function render(): void {

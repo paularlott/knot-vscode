@@ -6,6 +6,7 @@ import type {
     ReadFileResponse,
     RunCommandRequest,
     RunCommandResponse,
+    ServerInfo,
     SpaceDefinition,
     SpaceInfo,
     SpaceInfoList,
@@ -32,6 +33,11 @@ export class KnotClient {
     // ---- Auth ----
     whoami(): Promise<UserResponse> {
         return this.http.get<UserResponse>('/api/users/whoami');
+    }
+
+    /** Server-wide info (wildcard domain for web-port URLs, etc.). */
+    getServerInfo(): Promise<ServerInfo> {
+        return this.http.get<ServerInfo>('/api/server-info');
     }
 
     // ---- Spaces ----

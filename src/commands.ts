@@ -49,6 +49,11 @@ export function registerCommands(ctx: CommandContext): vscode.Disposable[] {
         vscode.commands.registerCommand('knot.openCodeServer', (item?: SpaceItem) => cmdOpenUrl(ctx, item, 'code-server')),
         vscode.commands.registerCommand('knot.openInBrowser', (item?: SpaceItem) => cmdOpenUrl(ctx, item, 'space')),
         vscode.commands.registerCommand('knot.openInVscode', (item?: SpaceItem) => cmdOpenInVscode(ctx, item)),
+        vscode.commands.registerCommand('knot.openWebPort', (url?: string) => {
+            if (url) {
+                void vscode.env.openExternal(vscode.Uri.parse(url));
+            }
+        }),
     ];
 }
 
