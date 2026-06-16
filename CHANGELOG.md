@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.1.5
+
+- **Context-aware lifecycle buttons**: start/stop/restart buttons now show based on state instead of always appearing.
+  - **Spaces**: stopped spaces show **Start**; running spaces show **Stop** and **Restart**. (Spaces that are still starting show **Stop**.)
+  - **Stacks**: when every space in a stack is running, only **Stop** and **Restart** are shown; when every space is stopped, only **Start** is shown; mixed stacks show all three. Stack rows now also display their aggregate state (Running / Stopped / Mixed) in the description.
+- **View Logs**: stream a running space's logs into a terminal tab. Connects to the server's `/logs/{space_id}/stream` WebSocket over the same bearer token (and honours `knot.insecure`), replays the recent history (up to ~1000 lines), then live-tails new lines with their original ANSI colours. Close the tab to stop streaming. Inline icon and context-menu entry appear only for running spaces.
+- **Open in VSCode**: when the current window has no folder open, the space now opens in that window instead of always launching a new one; windows with a workspace open still get a new window.
+
 ## 0.1.4
 
 - **Web ports**: running spaces that expose HTTP ports now expand to show each dev URL (including alt-name aliases); click to open in the browser. Uses knot 0.26.0's new `/api/server-info` endpoint for the wildcard domain.

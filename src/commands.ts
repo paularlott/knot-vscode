@@ -8,6 +8,7 @@ import type { ConnectedServer, ServerConfig, ServerStore } from './serverStore';
 import { serverLabel } from './serverStore';
 import { SpaceItem, SpacesTreeProvider, StackItem } from './provider/spacesTreeProvider';
 import { createKnotTerminal } from './terminal/knotTerminal';
+import { createKnotLogsTerminal } from './terminal/spaceLogsTerminal';
 import { upsertKnotHost, removeKnotHost, removeKnotAliasBlock, aliasForServer } from './ssh';
 
 export interface CommandContext {
@@ -45,6 +46,7 @@ export function registerCommands(ctx: CommandContext): vscode.Disposable[] {
         vscode.commands.registerCommand('knot.createStack', (node?: { serverId?: string }) => cmdCreateStack(ctx, node?.serverId)),
         vscode.commands.registerCommand('knot.deleteStack', (item?: StackItem) => cmdDeleteStack(ctx, item)),
         vscode.commands.registerCommand('knot.openTerminal', (item?: SpaceItem) => cmdOpenTerminal(ctx, item)),
+        vscode.commands.registerCommand('knot.viewLogs', (item?: SpaceItem) => cmdViewLogs(ctx, item)),
         vscode.commands.registerCommand('knot.runCommand', (item?: SpaceItem) => cmdRunCommand(ctx, item)),
         vscode.commands.registerCommand('knot.openCodeServer', (item?: SpaceItem) => cmdOpenUrl(ctx, item, 'code-server')),
         vscode.commands.registerCommand('knot.openInBrowser', (item?: SpaceItem) => cmdOpenUrl(ctx, item, 'space')),
@@ -603,6 +605,32 @@ async function cmdOpenTerminal(ctx: CommandContext, item?: SpaceItem): Promise<v
     }
 }
 
+async function cmdViewLogs(ctx: CommandContext, item?: SpaceItem): Promise<void> {
+    const space = item ?? (await pickSpace(ctx));
+    if (!space) {
+        return;
+    }
+    if (!space.space.is_deployed) {
+        vscode.window.showWarningMessage(`Knot: "${space.space.name}" has no logs (start the space first).`);
+        return;
+    }
+    const conn = await ctx.ensureConnected(space.serverId);
+    if (!conn) {
+        return;
+    }
+    try {
+        const term = createKnotLogsTerminal({
+            baseUrl: conn.config.address,
+            token: conn.config.token,
+            insecureSkipVerify: conn.config.insecure,
+            space: space.space,
+        });
+        term.show();
+    } catch (err) {
+        vscode.window.showErrorMessage(`Knot: logs failed: ${describeError(err)}`);
+    }
+}
+
 async function cmdRunCommand(ctx: CommandContext, item?: SpaceItem): Promise<void> {
     const space = item ?? (await pickSpace(ctx));
     if (!space) {
@@ -740,7 +768,26 @@ async function cmdOpenInVscode(ctx: CommandContext, item?: SpaceItem): Promise<v
 
     const remotePath = space.space.username ? `/home/${space.space.username}` : '/';
     const uri = `vscode-remote://ssh-remote+${host}${remotePath}`;
-    await openRemoteWindow(uri);
+    await openRemote(uri);
+}
+
+/**
+ * Open a vscode-remote:// URI in the current window when nothing is loaded,
+ * otherwise in a new window.
+ */
+async function openRemote(folderUri: string): Promise<void> {
+    const empty =
+        !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
+    if (empty) {
+        try {
+            await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.parse(folderUri), false);
+            return;
+        } catch (err) {
+            vscode.window.showErrorMessage(`Knot: failed to open in current window: ${describeError(err)}`);
+            return;
+        }
+    }
+    await openRemoteWindow(folderUri);
 }
 
 /** Open a vscode-remote:// URI in a new window via the running VS Code's CLI. */

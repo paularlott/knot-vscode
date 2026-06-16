@@ -2,7 +2,7 @@
   "name": "knot-vscode",
   "displayName": "Knot",
   "description": "Manage Knot cloud development environments from VS Code: list, create, start/stop/restart, web terminal, and run commands in spaces.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "paularlott",
   "license": "Apache-2.0",
   "repository": {
@@ -138,6 +138,12 @@
         "icon": "$(terminal)"
       },
       {
+        "command": "knot.viewLogs",
+        "title": "View Logs",
+        "category": "Knot",
+        "icon": "$(output)"
+      },
+      {
         "command": "knot.runCommand",
         "title": "Run Command in Space",
         "category": "Knot",
@@ -219,17 +225,17 @@
         },
         {
           "command": "knot.startSpace",
-          "when": "view == knot.spaces && viewItem =~ /^knot-space/",
+          "when": "view == knot.spaces && viewItem == knot-space-stopped",
           "group": "inline@1"
         },
         {
           "command": "knot.stopSpace",
-          "when": "view == knot.spaces && viewItem =~ /^knot-space/",
+          "when": "view == knot.spaces && (viewItem =~ /^knot-space-running/ || viewItem == knot-space-starting)",
           "group": "inline@2"
         },
         {
           "command": "knot.restartSpace",
-          "when": "view == knot.spaces && viewItem =~ /^knot-space/",
+          "when": "view == knot.spaces && viewItem =~ /^knot-space-running/",
           "group": "inline@3"
         },
         {
@@ -241,6 +247,11 @@
           "command": "knot.openInVscode",
           "when": "view == knot.spaces && viewItem =~ /ssh/",
           "group": "inline@5"
+        },
+        {
+          "command": "knot.viewLogs",
+          "when": "view == knot.spaces && viewItem =~ /^knot-space-running/",
+          "group": "inline@6"
         },
         {
           "command": "knot.openTerminal",
@@ -268,18 +279,23 @@
           "group": "1_actions@5"
         },
         {
+          "command": "knot.viewLogs",
+          "when": "view == knot.spaces && viewItem =~ /^knot-space-running/",
+          "group": "1_actions@6"
+        },
+        {
           "command": "knot.startSpace",
-          "when": "view == knot.spaces && viewItem =~ /^knot-space/",
+          "when": "view == knot.spaces && viewItem == knot-space-stopped",
           "group": "2_lifecycle@1"
         },
         {
           "command": "knot.stopSpace",
-          "when": "view == knot.spaces && viewItem =~ /^knot-space/",
+          "when": "view == knot.spaces && (viewItem =~ /^knot-space-running/ || viewItem == knot-space-starting)",
           "group": "2_lifecycle@2"
         },
         {
           "command": "knot.restartSpace",
-          "when": "view == knot.spaces && viewItem =~ /^knot-space/",
+          "when": "view == knot.spaces && viewItem =~ /^knot-space-running/",
           "group": "2_lifecycle@3"
         },
         {
@@ -289,37 +305,37 @@
         },
         {
           "command": "knot.startStack",
-          "when": "view == knot.spaces && viewItem == knot-stack",
+          "when": "view == knot.spaces && (viewItem == knot-stack-stopped || viewItem == knot-stack-mixed)",
           "group": "inline@1"
         },
         {
           "command": "knot.stopStack",
-          "when": "view == knot.spaces && viewItem == knot-stack",
+          "when": "view == knot.spaces && (viewItem == knot-stack-running || viewItem == knot-stack-mixed)",
           "group": "inline@2"
         },
         {
           "command": "knot.restartStack",
-          "when": "view == knot.spaces && viewItem == knot-stack",
+          "when": "view == knot.spaces && (viewItem == knot-stack-running || viewItem == knot-stack-mixed)",
           "group": "inline@3"
         },
         {
           "command": "knot.startStack",
-          "when": "view == knot.spaces && viewItem == knot-stack",
+          "when": "view == knot.spaces && (viewItem == knot-stack-stopped || viewItem == knot-stack-mixed)",
           "group": "1_lifecycle@1"
         },
         {
           "command": "knot.stopStack",
-          "when": "view == knot.spaces && viewItem == knot-stack",
+          "when": "view == knot.spaces && (viewItem == knot-stack-running || viewItem == knot-stack-mixed)",
           "group": "1_lifecycle@2"
         },
         {
           "command": "knot.restartStack",
-          "when": "view == knot.spaces && viewItem == knot-stack",
+          "when": "view == knot.spaces && (viewItem == knot-stack-running || viewItem == knot-stack-mixed)",
           "group": "1_lifecycle@3"
         },
         {
           "command": "knot.deleteStack",
-          "when": "view == knot.spaces && viewItem == knot-stack",
+          "when": "view == knot.spaces && viewItem =~ /^knot-stack/",
           "group": "3_delete@1"
         }
       ]

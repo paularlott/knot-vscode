@@ -52,9 +52,8 @@ function statusLabel(lifecycle: SpaceLifecycle): string {
 }
 
 function buildSpaceContextValue(lifecycle: SpaceLifecycle, space: SpaceInfo): string {
-    const flags: string[] = ['knot-space'];
+    const flags: string[] = ['knot-space', lifecycle];
     if (lifecycle === 'running') {
-        flags.push('running');
         if (space.has_terminal) {
             flags.push('terminal');
         }
@@ -66,6 +65,22 @@ function buildSpaceContextValue(lifecycle: SpaceLifecycle, space: SpaceInfo): st
         }
     }
     return flags.join('-');
+}
+
+export type StackLifecycle = 'running' | 'stopped' | 'mixed';
+
+/** Aggregate a stack's child space lifecycles into a single state for button gating. */
+export function deriveStackLifecycle(items: SpaceItem[]): StackLifecycle {
+    if (items.length === 0) {
+        return 'stopped';
+    }
+    if (items.every((i) => i.lifecycle === 'running')) {
+        return 'running';
+    }
+    if (items.every((i) => i.lifecycle === 'stopped')) {
+        return 'stopped';
+    }
+    return 'mixed';
 }
 
 export class SpaceItem extends vscode.TreeItem {
@@ -122,8 +137,18 @@ export class StackItem extends vscode.TreeItem {
     constructor(readonly stackName: string, readonly serverId: string) {
         super(stackName, vscode.TreeItemCollapsibleState.Expanded);
         this.iconPath = new vscode.ThemeIcon('layers');
-        this.contextValue = 'knot-stack';
-        this.tooltip = `Stack: ${stackName}`;
+        this.refreshLifecycle();
+    }
+
+    /** Recompute contextValue/description/tooltip from the current child spaces. */
+    refreshLifecycle(): void {
+        const lifecycle = deriveStackLifecycle(this.children);
+        this.contextValue = `knot-stack-${lifecycle}`;
+        const count = this.children.length;
+        const stateLabel =
+            lifecycle === 'running' ? 'Running' : lifecycle === 'stopped' ? 'Stopped' : 'Mixed';
+        this.description = `${count} space${count === 1 ? '' : 's'} \u00b7 ${stateLabel}`;
+        this.tooltip = `Stack: ${this.stackName} (${stateLabel})`;
     }
 }
 
@@ -325,7 +350,7 @@ function buildServerNode(view: ServerView): ServerNode {
             .get(name)!
             .sort((a, b) => (a.name || a.space_id).localeCompare(b.name || b.space_id))
             .forEach((s) => stack.children.push(makeSpaceItem(s, view)));
-        stack.description = `${stack.children.length} space${stack.children.length === 1 ? '' : 's'}`;
+        stack.refreshLifecycle();
         children.push(stack);
     }
 
