@@ -2,7 +2,7 @@
   "name": "knot-vscode",
   "displayName": "Knot",
   "description": "Manage Knot cloud development environments from VS Code: list, create, start/stop/restart, web terminal, and run commands in spaces.",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "publisher": "paularlott",
   "license": "Apache-2.0",
   "repository": {
@@ -51,7 +51,10 @@
         "command": "knot.addServer",
         "title": "Add Server",
         "category": "Knot",
-        "icon": { "light": "media/add-server-light.svg", "dark": "media/add-server-dark.svg" }
+        "icon": {
+          "light": "media/add-server-light.svg",
+          "dark": "media/add-server-dark.svg"
+        }
       },
       {
         "command": "knot.editServer",
@@ -75,7 +78,10 @@
         "command": "knot.createSpace",
         "title": "Create Space",
         "category": "Knot",
-        "icon": { "light": "media/create-space-light.svg", "dark": "media/create-space-dark.svg" }
+        "icon": {
+          "light": "media/create-space-light.svg",
+          "dark": "media/create-space-dark.svg"
+        }
       },
       {
         "command": "knot.deleteSpace",
@@ -87,43 +93,64 @@
         "command": "knot.startSpace",
         "title": "Start",
         "category": "Knot",
-        "icon": { "light": "media/start-light.svg", "dark": "media/start-dark.svg" }
+        "icon": {
+          "light": "media/start-light.svg",
+          "dark": "media/start-dark.svg"
+        }
       },
       {
         "command": "knot.stopSpace",
         "title": "Stop",
         "category": "Knot",
-        "icon": { "light": "media/stop-light.svg", "dark": "media/stop-dark.svg" }
+        "icon": {
+          "light": "media/stop-light.svg",
+          "dark": "media/stop-dark.svg"
+        }
       },
       {
         "command": "knot.restartSpace",
         "title": "Restart",
         "category": "Knot",
-        "icon": { "light": "media/restart-light.svg", "dark": "media/restart-dark.svg" }
+        "icon": {
+          "light": "media/restart-light.svg",
+          "dark": "media/restart-dark.svg"
+        }
       },
       {
         "command": "knot.startStack",
         "title": "Start Stack",
         "category": "Knot",
-        "icon": { "light": "media/start-light.svg", "dark": "media/start-dark.svg" }
+        "icon": {
+          "light": "media/start-light.svg",
+          "dark": "media/start-dark.svg"
+        }
       },
       {
         "command": "knot.stopStack",
         "title": "Stop Stack",
         "category": "Knot",
-        "icon": { "light": "media/stop-light.svg", "dark": "media/stop-dark.svg" }
+        "icon": {
+          "light": "media/stop-light.svg",
+          "dark": "media/stop-dark.svg"
+        }
       },
       {
         "command": "knot.restartStack",
         "title": "Restart Stack",
         "category": "Knot",
-        "icon": { "light": "media/restart-light.svg", "dark": "media/restart-dark.svg" }
+        "icon": {
+          "light": "media/restart-light.svg",
+          "dark": "media/restart-dark.svg"
+        }
       },
       {
         "command": "knot.createStack",
         "title": "Create Stack",
         "category": "Knot",
-        "icon": { "light": "media/create-stack-light.svg", "dark": "media/create-stack-dark.svg" }
+        "icon": {
+          "light": "media/create-stack-light.svg",
+          "dark": "media/create-stack-dark.svg"
+        }
       },
       {
         "command": "knot.deleteStack",
@@ -335,7 +362,7 @@
         },
         {
           "command": "knot.deleteStack",
-          "when": "view == knot.spaces && viewItem =~ /^knot-stack/",
+          "when": "view == knot.spaces && viewItem == knot-stack-stopped",
           "group": "3_delete@1"
         }
       ]

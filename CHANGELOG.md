@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.1.6
+
+- **Delete Stack**: stacks can now be deleted from the tree view's context menu. The **Delete Stack** action only appears when every space in the stack is stopped, requires knot 0.26.2 or later. SSH host entries for the deleted spaces are cleaned up from `~/.ssh/config`.
+
 ## 0.1.5
 
 - **Context-aware lifecycle buttons**: start/stop/restart buttons now show based on state instead of always appearing.

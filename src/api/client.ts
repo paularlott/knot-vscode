@@ -91,6 +91,15 @@ export class KnotClient {
         return this.http.post(`/api/spaces/stacks/${encodeURIComponent(name)}/restart`, undefined, 202);
     }
 
+    /**
+     * Delete every space in a stack. The server validates that every space is
+     * stoppable before mutating anything (all-or-nothing). Resolves once each
+     * space has been marked as deleting; teardown continues asynchronously.
+     */
+    deleteStack(name: string): Promise<void> {
+        return this.http.delete(`/api/stacks/${encodeURIComponent(name)}`);
+    }
+
     // ---- Run command / files ----
     /** Runs a command; throws if the space reports failure (success:false). */
     runCommand(spaceId: string, req: RunCommandRequest): Promise<RunCommandResponse> {

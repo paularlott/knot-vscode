@@ -93,7 +93,7 @@ export class SpaceItem extends vscode.TreeItem {
     ) {
         super(space.name || space.space_id, vscode.TreeItemCollapsibleState.None);
 
-        const parts: string[] = [statusLabel(lifecycle)];
+        const parts: string[] = [];
         if (space.template_name) {
             parts.push(space.template_name);
         }

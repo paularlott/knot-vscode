@@ -416,20 +416,22 @@ async function cmdDeleteStack(ctx: CommandContext, item?: StackItem): Promise<vo
     }
     await vscode.window.withProgress(
         { location: vscode.ProgressLocation.Notification, title: `Knot: deleting stack "${stack.stackName}"` },
-        async (progress) => {
-            const step = 100 / (spaces.length || 1);
-            let failures = 0;
-            for (const s of spaces) {
-                progress.report({ message: `deleting ${s.space.name || s.space.space_id}`, increment: step });
-                try {
-                    await conn.client.deleteSpace(s.space.space_id);
-                } catch {
-                    failures++;
+        async () => {
+            try {
+                await conn.client.deleteStack(stack.stackName);
+                // Prune SSH hosts for the deleted spaces.
+                const alias = aliasForServer(stack.serverId);
+                for (const s of spaces) {
+                    try {
+                        removeKnotHost(alias, `knot.${s.space.name}.${alias}`);
+                    } catch {
+                        // best-effort
+                    }
                 }
-            }
-            await ctx.reloadServer(stack.serverId);
-            if (failures) {
-                vscode.window.showWarningMessage(`Knot: deleted stack, ${failures} space(s) could not be removed.`);
+                await ctx.reloadServer(stack.serverId);
+                vscode.window.showInformationMessage(`Knot: stack "${stack.stackName}" deleting.`);
+            } catch (err) {
+                vscode.window.showErrorMessage(`Knot: ${describeError(err)}`);
             }
         },
     );
