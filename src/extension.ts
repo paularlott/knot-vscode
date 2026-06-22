@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { ServerStore } from './serverStore';
 import type { ServerStatus, ServerView } from './provider/spacesTreeProvider';
 import { SpacesTreeProvider } from './provider/spacesTreeProvider';
@@ -7,6 +8,14 @@ import { describeError, getAutoRefresh, getRefreshInterval } from './session';
 import type { PoolInfo, SpaceInfo } from './api/types';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    // Register knot.* library stubs with Pylance for IntelliSense
+    const stubPath = path.join(context.extensionPath, 'stubs');
+    const pythonConfig = vscode.workspace.getConfiguration('python.analysis');
+    const existing = pythonConfig.get<string[]>('extraPaths', []);
+    if (!existing.includes(stubPath)) {
+        pythonConfig.update('extraPaths', [...existing, stubPath], vscode.ConfigurationTarget.Global);
+    }
+
     const store = new ServerStore(context.secrets);
     const tree = new SpacesTreeProvider();
 
