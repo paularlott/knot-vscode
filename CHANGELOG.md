@@ -1,5 +1,14 @@
 # Change Log
 
+## 0.1.7
+
+- **Space Pools**: pools are now visible in the tree view, grouped as collapsible `Pool: <name>` nodes with their member spaces as children. Requires knot 0.27.0 or later.
+  - Pool rows show live/deployed count and active/stopped state.
+  - **Start Pool** and **Stop Pool** appear in the context menu and inline based on pool state.
+  - **Set Pool Size** opens an input box to change the desired space count; the sweep loop handles creating or removing members.
+  - **Delete Pool** (stopped pools only) deletes all member spaces and the pool definition.
+  - Pool member spaces are excluded from the standalone/stack sections, matching the web UI.
+
 ## 0.1.6
 
 - **Delete Stack**: stacks can now be deleted from the tree view's context menu. The **Delete Stack** action only appears when every space in the stack is stopped, requires knot 0.26.2 or later. SSH host entries for the deleted spaces are cleaned up from `~/.ssh/config`.

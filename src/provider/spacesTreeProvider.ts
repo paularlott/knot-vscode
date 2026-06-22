@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { SpaceInfo } from '../api/types';
+import type { PoolInfo, SpaceInfo } from '../api/types';
 import type { ServerConfig } from '../serverStore';
 import { serverLabel } from '../serverStore';
 
@@ -52,7 +52,8 @@ function statusLabel(lifecycle: SpaceLifecycle): string {
 }
 
 function buildSpaceContextValue(lifecycle: SpaceLifecycle, space: SpaceInfo): string {
-    const flags: string[] = ['knot-space', lifecycle];
+    const prefix = space.pool_id ? 'knot-poolspace' : 'knot-space';
+    const flags: string[] = [prefix, lifecycle];
     if (lifecycle === 'running') {
         if (space.has_terminal) {
             flags.push('terminal');
@@ -152,6 +153,28 @@ export class StackItem extends vscode.TreeItem {
     }
 }
 
+export type PoolLifecycle = 'active' | 'stopped';
+
+export class PoolItem extends vscode.TreeItem {
+    readonly children: SpaceItem[] = [];
+
+    constructor(readonly pool: PoolInfo, readonly serverId: string) {
+        super(pool.name, vscode.TreeItemCollapsibleState.Collapsed);
+        this.iconPath = new vscode.ThemeIcon('package');
+        this.refresh(pool);
+    }
+
+    refresh(pool: PoolInfo): void {
+        const lifecycle: PoolLifecycle = pool.active ? 'active' : 'stopped';
+        this.contextValue = `knot-pool-${lifecycle}`;
+        const alive = pool.alive_members;
+        const desired = pool.desired_count;
+        const stateLabel = pool.active ? 'Active' : 'Stopped';
+        this.description = `${alive} / ${desired} space${desired === 1 ? '' : 's'} \u00b7 ${stateLabel}`;
+        this.tooltip = `Pool: ${this.pool.name} (${stateLabel}, ${alive}/${desired} alive)`;
+    }
+}
+
 /** A configured server node. Stable id so expand/collapse state survives reloads. */
 export class ServerNode extends vscode.TreeItem {
     children: vscode.TreeItem[] = [];
@@ -201,6 +224,7 @@ export interface ServerView {
     status: ServerStatus;
     error?: string;
     spaces?: SpaceInfo[];
+    pools?: PoolInfo[];
     /** knot server version. */
     version?: string;
     /** Server wildcard domain, used to build web-port URLs. */
@@ -268,6 +292,18 @@ export class SpacesTreeProvider implements vscode.TreeDataProvider<vscode.TreeIt
         return out;
     }
 
+    getPools(): PoolItem[] {
+        const out: PoolItem[] = [];
+        for (const node of this.roots) {
+            for (const child of node.children) {
+                if (child instanceof PoolItem) {
+                    out.push(child);
+                }
+            }
+        }
+        return out;
+    }
+
     getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
         return element;
     }
@@ -277,6 +313,9 @@ export class SpacesTreeProvider implements vscode.TreeDataProvider<vscode.TreeIt
             return element.children;
         }
         if (element instanceof StackItem) {
+            return element.children;
+        }
+        if (element instanceof PoolItem) {
             return element.children;
         }
         if (element instanceof SpaceItem) {
@@ -318,15 +357,30 @@ function buildServerNode(view: ServerView): ServerNode {
         return node;
     }
 
-    const spaces = view.spaces ?? [];
-    if (spaces.length === 0) {
+    const allSpaces = view.spaces ?? [];
+    const pools = view.pools ?? [];
+    const poolById = new Map(pools.map((p) => [p.pool_id, p]));
+
+    // Partition: pool members vs non-pool spaces
+    const poolSpaces: SpaceInfo[] = [];
+    const nonPoolSpaces: SpaceInfo[] = [];
+    for (const s of allSpaces) {
+        if (s.pool_id) {
+            poolSpaces.push(s);
+        } else {
+            nonPoolSpaces.push(s);
+        }
+    }
+
+    if (allSpaces.length === 0 && pools.length === 0) {
         node.children = [new MessageItem('No spaces')];
         return node;
     }
 
+    // --- Non-pool spaces: standalone + stacks (same as before) ---
     const groups = new Map<string, SpaceInfo[]>();
     const standalone: SpaceInfo[] = [];
-    for (const s of spaces) {
+    for (const s of nonPoolSpaces) {
         if (s.stack) {
             let bucket = groups.get(s.stack);
             if (!bucket) {
@@ -339,8 +393,7 @@ function buildServerNode(view: ServerView): ServerNode {
         }
     }
 
-    const children: (StackItem | SpaceItem)[] = [];
-    // Standalone spaces first (matches the web UI ordering), then stacks.
+    const children: (StackItem | SpaceItem | PoolItem)[] = [];
     standalone
         .sort((a, b) => (a.name || a.space_id).localeCompare(b.name || b.space_id))
         .forEach((s) => children.push(makeSpaceItem(s, view)));
@@ -352,6 +405,25 @@ function buildServerNode(view: ServerView): ServerNode {
             .forEach((s) => stack.children.push(makeSpaceItem(s, view)));
         stack.refreshLifecycle();
         children.push(stack);
+    }
+
+    // --- Pool groups ---
+    const spacesByPool = new Map<string, SpaceInfo[]>();
+    for (const s of poolSpaces) {
+        let bucket = spacesByPool.get(s.pool_id);
+        if (!bucket) {
+            bucket = [];
+            spacesByPool.set(s.pool_id, bucket);
+        }
+        bucket.push(s);
+    }
+    for (const pool of pools) {
+        const poolItem = new PoolItem(pool, view.config.id);
+        const members = spacesByPool.get(pool.pool_id) ?? [];
+        members
+            .sort((a, b) => (a.name || a.space_id).localeCompare(b.name || b.space_id))
+            .forEach((s) => poolItem.children.push(makeSpaceItem(s, view)));
+        children.push(poolItem);
     }
 
     node.children = children;

@@ -2,6 +2,7 @@ import { HttpClient } from './http';
 import type {
     CreateSpaceResponse,
     PortApplyRequest,
+    PoolList,
     ReadFileRequest,
     ReadFileResponse,
     RunCommandRequest,
@@ -148,6 +149,26 @@ export class KnotClient {
     // ---- Port forwarding (space-io) ----
     applyPorts(spaceId: string, req: PortApplyRequest): Promise<void> {
         return this.http.post(`/space-io/${encodeURIComponent(spaceId)}/port/apply`, req, 200);
+    }
+
+    // ---- Pools ----
+    listPools(): Promise<PoolList> {
+        return this.http.get<PoolList>('/api/pools');
+    }
+    createPool(req: { name: string; template_id: string; desired_count: number; active?: boolean }): Promise<{ pool_id: string }> {
+        return this.http.post('/api/pools', req, 201);
+    }
+    startPool(idOrName: string): Promise<void> {
+        return this.http.post(`/api/pools/${encodeURIComponent(idOrName)}/start`, undefined, 200);
+    }
+    stopPool(idOrName: string): Promise<void> {
+        return this.http.post(`/api/pools/${encodeURIComponent(idOrName)}/stop`, undefined, 200);
+    }
+    setPoolSize(idOrName: string, desiredCount: number): Promise<void> {
+        return this.http.post(`/api/pools/${encodeURIComponent(idOrName)}/size`, { desired_count: desiredCount }, 200);
+    }
+    deletePool(idOrName: string): Promise<void> {
+        return this.http.delete(`/api/pools/${encodeURIComponent(idOrName)}`) as unknown as Promise<void>;
     }
 
     // ---- Helpers ----

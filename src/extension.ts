@@ -4,7 +4,7 @@ import type { ServerStatus, ServerView } from './provider/spacesTreeProvider';
 import { SpacesTreeProvider } from './provider/spacesTreeProvider';
 import { registerCommands } from './commands';
 import { describeError, getAutoRefresh, getRefreshInterval } from './session';
-import type { SpaceInfo } from './api/types';
+import type { PoolInfo, SpaceInfo } from './api/types';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     const store = new ServerStore(context.secrets);
@@ -20,6 +20,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const status = new Map<string, ServerStatus>();
     const errors = new Map<string, string>();
     const spaces = new Map<string, SpaceInfo[]>();
+    const pools = new Map<string, PoolInfo[]>();
 
     function buildViews(): ServerView[] {
         return store.list().map((config) => {
@@ -30,6 +31,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 status: status.get(config.id) ?? 'disconnected',
                 error: errors.get(config.id),
                 spaces: spaces.get(config.id),
+                pools: pools.get(config.id),
                 version: conn?.version,
                 wildcardDomain: conn?.wildcardDomain,
                 proto,
@@ -68,12 +70,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             return;
         }
         try {
-            // The API returns owned + shared spaces for a user; keep only the
-            // user's own, in the server's zone (zone is filtered server-side).
             const list = await conn.client.listSpaces(conn.user.user_id);
             spaces.set(id, (list.spaces ?? []).filter((s) => s.user_id === conn.user.user_id));
+            const poolList = await conn.client.listPools();
+            pools.set(id, poolList.pools ?? []);
         } catch (err) {
             spaces.set(id, []);
+            pools.set(id, []);
             errors.set(id, describeError(err));
             status.set(id, 'error');
         }
@@ -89,6 +92,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         try {
             const list = await conn.client.listSpaces(conn.user.user_id);
             spaces.set(id, (list.spaces ?? []).filter((s) => s.user_id === conn.user.user_id));
+            const poolList = await conn.client.listPools();
+            pools.set(id, poolList.pools ?? []);
             if (status.get(id) === 'error') {
                 status.set(id, 'connected');
                 errors.delete(id);

@@ -6,7 +6,7 @@ import type { CustomFieldValue, PortForwardRequest, SpaceRequest, StackDefinitio
 import { describeError, defaultInsecure } from './session';
 import type { ConnectedServer, ServerConfig, ServerStore } from './serverStore';
 import { serverLabel } from './serverStore';
-import { SpaceItem, SpacesTreeProvider, StackItem } from './provider/spacesTreeProvider';
+import { PoolItem, SpaceItem, SpacesTreeProvider, StackItem } from './provider/spacesTreeProvider';
 import { createKnotTerminal } from './terminal/knotTerminal';
 import { createKnotLogsTerminal } from './terminal/spaceLogsTerminal';
 import { upsertKnotHost, removeKnotHost, removeKnotAliasBlock, aliasForServer } from './ssh';
@@ -44,7 +44,12 @@ export function registerCommands(ctx: CommandContext): vscode.Disposable[] {
         vscode.commands.registerCommand('knot.stopStack', (item?: StackItem) => cmdStackLifecycle(ctx, item, 'stop')),
         vscode.commands.registerCommand('knot.restartStack', (item?: StackItem) => cmdStackLifecycle(ctx, item, 'restart')),
         vscode.commands.registerCommand('knot.createStack', (node?: { serverId?: string }) => cmdCreateStack(ctx, node?.serverId)),
+        vscode.commands.registerCommand('knot.createPool', (node?: { serverId?: string }) => cmdCreatePool(ctx, node?.serverId)),
         vscode.commands.registerCommand('knot.deleteStack', (item?: StackItem) => cmdDeleteStack(ctx, item)),
+        vscode.commands.registerCommand('knot.startPool', (item?: PoolItem) => cmdPoolLifecycle(ctx, item, 'start')),
+        vscode.commands.registerCommand('knot.stopPool', (item?: PoolItem) => cmdPoolLifecycle(ctx, item, 'stop')),
+        vscode.commands.registerCommand('knot.setPoolSize', (item?: PoolItem) => cmdSetPoolSize(ctx, item)),
+        vscode.commands.registerCommand('knot.deletePool', (item?: PoolItem) => cmdDeletePool(ctx, item)),
         vscode.commands.registerCommand('knot.openTerminal', (item?: SpaceItem) => cmdOpenTerminal(ctx, item)),
         vscode.commands.registerCommand('knot.viewLogs', (item?: SpaceItem) => cmdViewLogs(ctx, item)),
         vscode.commands.registerCommand('knot.runCommand', (item?: SpaceItem) => cmdRunCommand(ctx, item)),
@@ -848,6 +853,196 @@ async function pickStack(ctx: CommandContext): Promise<StackItem | undefined> {
     const picked = await vscode.window.showQuickPick(
         stacks.map((s) => ({ label: s.stackName, description: s.description as string | undefined, item: s })),
         { placeHolder: 'Select a stack', ignoreFocusOut: true },
+    );
+    return picked?.item;
+}
+
+// ---------------------------------------------------------------------------
+// Pools
+// ---------------------------------------------------------------------------
+
+async function cmdCreatePool(ctx: CommandContext, serverId?: string): Promise<void> {
+    const server = await resolveServer(ctx, serverId);
+    if (!server) {
+        return;
+    }
+    const conn = await ctx.ensureConnected(server.id);
+    if (!conn) {
+        return;
+    }
+
+    // Pick template
+    let templates: Template[] = [];
+    try {
+        templates = (await conn.client.listTemplates()).templates ?? [];
+    } catch {
+        // ignore
+    }
+    templates = templates.filter((t) => t.active);
+    if (templates.length === 0) {
+        vscode.window.showErrorMessage('Knot: no active templates available.');
+        return;
+    }
+    const tmplPick = await vscode.window.showQuickPick(
+        templates.map((t) => ({ label: t.name, description: t.description, item: t })),
+        { placeHolder: 'Select a template', ignoreFocusOut: true },
+    );
+    if (!tmplPick) {
+        return;
+    }
+
+    // Pool name
+    const name = await vscode.window.showInputBox({
+        prompt: 'Pool name',
+        placeHolder: 'my-pool',
+        validateInput: (v) => (v && /^[a-zA-Z0-9_-]+$/.test(v) ? undefined : 'Letters, numbers, hyphens, underscores only'),
+    });
+    if (!name) {
+        return;
+    }
+
+    // Desired count
+    const countStr = await vscode.window.showInputBox({
+        prompt: 'Number of spaces',
+        value: '1',
+        validateInput: (v) => {
+            const n = Number.parseInt(v, 10);
+            return Number.isFinite(n) && n >= 1 ? undefined : 'Enter a positive integer (minimum 1)';
+        },
+    });
+    if (!countStr) {
+        return;
+    }
+    const desiredCount = Number.parseInt(countStr, 10);
+
+    // Start on create
+    const startPick = await vscode.window.showQuickPick(
+        [{ label: 'Yes', value: true }, { label: 'No', value: false }],
+        { placeHolder: 'Start pool on create?', ignoreFocusOut: true },
+    );
+    if (!startPick) {
+        return;
+    }
+
+    await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: `Knot: creating pool "${name}"` },
+        async () => {
+            try {
+                await conn.client.createPool({
+                    name,
+                    template_id: tmplPick.item.template_id,
+                    desired_count: desiredCount,
+                    active: startPick.value,
+                });
+                await ctx.reloadServer(server.id);
+                vscode.window.showInformationMessage(`Knot: pool "${name}" created.`);
+            } catch (err) {
+                vscode.window.showErrorMessage(`Knot: ${describeError(err)}`);
+            }
+        },
+    );
+}
+
+async function cmdPoolLifecycle(
+    ctx: CommandContext,
+    item: PoolItem | undefined,
+    action: 'start' | 'stop',
+): Promise<void> {
+    const pool = item ?? (await pickPool(ctx));
+    if (!pool) {
+        return;
+    }
+    const conn = await ctx.ensureConnected(pool.serverId);
+    if (!conn) {
+        return;
+    }
+    const verb = action === 'start' ? 'Starting' : 'Stopping';
+    await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: `Knot: ${verb} pool "${pool.pool.name}"` },
+        async () => {
+            try {
+                await conn.client[`${action}Pool`](pool.pool.pool_id);
+                await ctx.reloadServer(pool.serverId);
+                for (const delay of [3000, 8000, 15000]) {
+                    setTimeout(() => void ctx.reloadServer(pool.serverId), delay);
+                }
+            } catch (err) {
+                vscode.window.showErrorMessage(`Knot: ${describeError(err)}`);
+            }
+        },
+    );
+}
+
+async function cmdSetPoolSize(ctx: CommandContext, item: PoolItem | undefined): Promise<void> {
+    const pool = item ?? (await pickPool(ctx));
+    if (!pool) {
+        return;
+    }
+    const conn = await ctx.ensureConnected(pool.serverId);
+    if (!conn) {
+        return;
+    }
+    const current = pool.pool.desired_count;
+    const input = await vscode.window.showInputBox({
+        prompt: `New desired space count for pool "${pool.pool.name}"`,
+        value: String(current),
+        validateInput: (v) => {
+            const n = Number.parseInt(v, 10);
+            if (!Number.isFinite(n) || n < 1) {
+                return 'Enter a positive integer (minimum 1)';
+            }
+            return undefined;
+        },
+    });
+    if (!input) {
+        return;
+    }
+    const desired = Number.parseInt(input, 10);
+    try {
+        await conn.client.setPoolSize(pool.pool.pool_id, desired);
+        await ctx.reloadServer(pool.serverId);
+        for (const delay of [3000, 8000, 15000]) {
+            setTimeout(() => void ctx.reloadServer(pool.serverId), delay);
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(`Knot: ${describeError(err)}`);
+    }
+}
+
+async function cmdDeletePool(ctx: CommandContext, item: PoolItem | undefined): Promise<void> {
+    const pool = item ?? (await pickPool(ctx));
+    if (!pool) {
+        return;
+    }
+    const conn = await ctx.ensureConnected(pool.serverId);
+    if (!conn) {
+        return;
+    }
+    const confirm = await vscode.window.showWarningMessage(
+        `Delete pool "${pool.pool.name}" and all its spaces?`,
+        { modal: true },
+        'Delete',
+    );
+    if (confirm !== 'Delete') {
+        return;
+    }
+    try {
+        await conn.client.deletePool(pool.pool.pool_id);
+        await ctx.reloadServer(pool.serverId);
+    } catch (err) {
+        vscode.window.showErrorMessage(`Knot: ${describeError(err)}`);
+    }
+}
+
+async function pickPool(ctx: CommandContext): Promise<PoolItem | undefined> {
+    const pools = ctx.tree.getPools();
+    if (pools.length === 0) {
+        vscode.window.showInformationMessage('Knot: no pools available.');
+        return undefined;
+    }
+    const picked = await vscode.window.showQuickPick(
+        pools.map((p) => ({ label: p.pool.name, description: p.description as string | undefined, item: p })),
+        { placeHolder: 'Select a pool', ignoreFocusOut: true },
     );
     return picked?.item;
 }

@@ -2,7 +2,7 @@
   "name": "knot-vscode",
   "displayName": "Knot",
   "description": "Manage Knot cloud development environments from VS Code: list, create, start/stop/restart, web terminal, and run commands in spaces.",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "publisher": "paularlott",
   "license": "Apache-2.0",
   "repository": {
@@ -153,8 +153,47 @@
         }
       },
       {
+        "command": "knot.createPool",
+        "title": "Create Pool",
+        "category": "Knot",
+        "icon": {
+          "light": "media/create-pool-light.svg",
+          "dark": "media/create-pool-dark.svg"
+        }
+      },
+      {
         "command": "knot.deleteStack",
         "title": "Delete Stack",
+        "category": "Knot",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "knot.startPool",
+        "title": "Start Pool",
+        "category": "Knot",
+        "icon": {
+          "light": "media/start-light.svg",
+          "dark": "media/start-dark.svg"
+        }
+      },
+      {
+        "command": "knot.stopPool",
+        "title": "Stop Pool",
+        "category": "Knot",
+        "icon": {
+          "light": "media/stop-light.svg",
+          "dark": "media/stop-dark.svg"
+        }
+      },
+      {
+        "command": "knot.setPoolSize",
+        "title": "Set Pool Size",
+        "category": "Knot",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "knot.deletePool",
+        "title": "Delete Pool",
         "category": "Knot",
         "icon": "$(trash)"
       },
@@ -226,6 +265,11 @@
           "group": "inline@2"
         },
         {
+          "command": "knot.createPool",
+          "when": "view == knot.spaces && viewItem == knot-server",
+          "group": "inline@3"
+        },
+        {
           "command": "knot.createSpace",
           "when": "view == knot.spaces && viewItem == knot-server",
           "group": "1_server@1"
@@ -236,9 +280,14 @@
           "group": "1_server@2"
         },
         {
-          "command": "knot.refresh",
+          "command": "knot.createPool",
           "when": "view == knot.spaces && viewItem == knot-server",
           "group": "1_server@3"
+        },
+        {
+          "command": "knot.refresh",
+          "when": "view == knot.spaces && viewItem == knot-server",
+          "group": "1_server@4"
         },
         {
           "command": "knot.editServer",
@@ -277,12 +326,12 @@
         },
         {
           "command": "knot.viewLogs",
-          "when": "view == knot.spaces && viewItem =~ /^knot-space-running/",
+          "when": "view == knot.spaces && viewItem =~ /space-running/",
           "group": "inline@6"
         },
         {
           "command": "knot.openTerminal",
-          "when": "view == knot.spaces && viewItem =~ /^knot-space/",
+          "when": "view == knot.spaces && viewItem =~ /^knot-.*space-/",
           "group": "1_actions@1"
         },
         {
@@ -297,7 +346,7 @@
         },
         {
           "command": "knot.openInBrowser",
-          "when": "view == knot.spaces && viewItem =~ /^knot-space/",
+          "when": "view == knot.spaces && viewItem =~ /^knot-.*space-/",
           "group": "1_actions@4"
         },
         {
@@ -307,7 +356,7 @@
         },
         {
           "command": "knot.viewLogs",
-          "when": "view == knot.spaces && viewItem =~ /^knot-space-running/",
+          "when": "view == knot.spaces && viewItem =~ /space-running/",
           "group": "1_actions@6"
         },
         {
@@ -363,6 +412,36 @@
         {
           "command": "knot.deleteStack",
           "when": "view == knot.spaces && viewItem == knot-stack-stopped",
+          "group": "3_delete@1"
+        },
+        {
+          "command": "knot.startPool",
+          "when": "view == knot.spaces && viewItem == knot-pool-stopped",
+          "group": "inline@1"
+        },
+        {
+          "command": "knot.stopPool",
+          "when": "view == knot.spaces && viewItem == knot-pool-active",
+          "group": "inline@2"
+        },
+        {
+          "command": "knot.startPool",
+          "when": "view == knot.spaces && viewItem == knot-pool-stopped",
+          "group": "1_lifecycle@1"
+        },
+        {
+          "command": "knot.stopPool",
+          "when": "view == knot.spaces && viewItem == knot-pool-active",
+          "group": "1_lifecycle@2"
+        },
+        {
+          "command": "knot.setPoolSize",
+          "when": "view == knot.spaces && viewItem =~ /^knot-pool/",
+          "group": "2_config@1"
+        },
+        {
+          "command": "knot.deletePool",
+          "when": "view == knot.spaces && viewItem == knot-pool-stopped",
           "group": "3_delete@1"
         }
       ]
