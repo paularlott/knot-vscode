@@ -92,6 +92,13 @@ export function createKnotLogsTerminal(opts: KnotLogsOptions): vscode.Terminal {
         });
         sock.on('close', () => {
             if (!closed) {
+                if (!sawHistoryMarker) {
+                    // Never connected to a live agent session (e.g. logs opened
+                    // for a space that isn't running). Leave the terminal open
+                    // with a message instead of flashing it open then disposing.
+                    writeOut('\r\n\x1b[90m[space not running — close to dismiss]\x1b[0m\r\n');
+                    return;
+                }
                 writeOut('\r\n\x1b[90m[stream ended]\x1b[0m\r\n');
                 onDidClose.fire();
             }
