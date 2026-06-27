@@ -214,6 +214,7 @@ export interface StackDefinitionInfo {
     user_id?: string;
     name: string;
     description: string;
+    icon_url?: string;
     active: boolean;
     scope?: string;
     groups?: string[];
