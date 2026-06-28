@@ -1,5 +1,16 @@
 # Change Log
 
+## 0.1.7
+
+- **Space Pools**: pools are now visible in the tree view, grouped as collapsible nodes with their member spaces as children. Requires knot 0.27.0 or later.
+  - Pool rows show live/deployed count and active/stopped state.
+  - **Create Pool** button on server nodes, alongside Create Space and Create Stack.
+  - **Start Pool** and **Stop Pool** appear in the context menu and inline based on pool state.
+  - **Set Pool Size** opens an input box to change the desired space count; the sweep loop handles creating or removing members.
+  - **Delete Pool** (stopped pools only) deletes all member spaces and the pool definition.
+  - Pool member spaces are excluded from the standalone/stack sections and have no individual lifecycle buttons (start/stop/restart/delete), matching the web UI.
+- **Python IntelliSense for knot.\* libraries**: bundled PEP 561 type stubs for all `knot.space`, `knot.pool`, `knot.template`, `knot.stack`, `knot.script`, `knot.user`, `knot.volume`, `knot.vars`, `knot.group`, `knot.role`, `knot.audit`, `knot.skill`, `knot.mcp`, `knot.ai`, `knot.apiclient`, and `knot.permission` libraries. Stubs are registered with Pylance automatically on activation, providing autocompletion, hover docs, and type checking in any Python file that imports `knot.*`.
+
 ## 0.1.6
 
 - **Delete Stack**: stacks can now be deleted from the tree view's context menu. The **Delete Stack** action only appears when every space in the stack is stopped, requires knot 0.26.2 or later. SSH host entries for the deleted spaces are cleaned up from `~/.ssh/config`.

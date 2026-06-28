@@ -41,8 +41,10 @@ tasks:
       - npm run typecheck
 
   build:
-    desc: Build extension (bundle only)
-    deps: [compile]
+    desc: Build extension (typecheck + bundle)
+    cmds:
+      - npm run typecheck
+      - npm run compile
 
   package:
     desc: Package extension as .vsix

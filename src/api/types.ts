@@ -57,6 +57,8 @@ export interface SpaceInfo {
     healthy: boolean;
     node_hostname: string;
     stack: string;
+    pool_id: string;
+    pool_name: string;
     alt_names: AltNameEntry[];
     custom_fields: CustomFieldValue[];
     resource_usage?: SpaceResourceUsage;
@@ -212,6 +214,7 @@ export interface StackDefinitionInfo {
     user_id?: string;
     name: string;
     description: string;
+    icon_url?: string;
     active: boolean;
     scope?: string;
     groups?: string[];
@@ -237,4 +240,50 @@ export interface PortForwardRequest {
 
 export interface PortApplyRequest {
     forwards: PortForwardRequest[];
+}
+
+// --- Pools ---
+
+export interface PoolUtilization {
+    combined_rps: number;
+    method_rps: number;
+    http_rps: number;
+    tcp_rps: number;
+    method_inflight: number;
+    avg_cpu_percent: number;
+    avg_memory_percent: number;
+}
+
+export interface PoolMemberInfo {
+    space_id: string;
+    name: string;
+    state: string;
+    combined_rps: number;
+    method_rps: number;
+    http_rps: number;
+    tcp_rps: number;
+    method_inflight: number;
+    cpu_percent: number;
+    memory_percent: number;
+    healthy: boolean;
+    is_pending: boolean;
+    is_deleting: boolean;
+    is_deployed: boolean;
+}
+
+export interface PoolInfo {
+    pool_id: string;
+    name: string;
+    template_id: string;
+    startup_script_id: string;
+    desired_count: number;
+    alive_members: number;
+    active: boolean;
+    utilization: PoolUtilization;
+    members: PoolMemberInfo[];
+}
+
+export interface PoolList {
+    count: number;
+    pools: PoolInfo[];
 }
