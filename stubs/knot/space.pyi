@@ -46,8 +46,78 @@ def share(name: str, user_ids: list[str]) -> bool: ...
 def unshare(name: str, user_id: str | None = ...) -> bool: ...
 def run(name: str, command: str, args: list[str] | None = ..., timeout: int = ..., workdir: str = ...) -> dict[str, Any]: ...
 def run_script(name: str, script_name: str, args: list[str] | None = ...) -> dict[str, Any]: ...
-def read_file(name: str, file_path: str) -> str: ...
-def write_file(name: str, file_path: str, content: str) -> bool: ...
+def eval(name: str, code: str, args: list[str] | None = ...) -> dict[str, Any]: ...
+def read_file(name: str, file_path: str, offset: int = ..., limit: int = ...) -> str: ...
+def write_file(name: str, file_path: str, content: str, mode: str = ...) -> bool: ...
+def grep(
+    name: str,
+    pattern: str,
+    path: str,
+    literal: bool = ...,
+    recursive: bool = ...,
+    ignore_case: bool = ...,
+    glob: str = ...,
+    follow_links: bool = ...,
+    max_size: int = ...,
+    workdir: str = ...,
+) -> list[dict[str, Any]]: ...
+def find(
+    name: str,
+    path: str = ...,
+    recursive: bool = ...,
+    type: str = ...,
+    name_glob: str = ...,
+    mtime_min: float | None = ...,
+    mtime_max: float | None = ...,
+    size_min: int | None = ...,
+    size_max: int | None = ...,
+    include_hidden: bool = ...,
+    follow_links: bool = ...,
+    max_depth: int = ...,
+    workdir: str = ...,
+) -> list[str]: ...
+def sed_replace(
+    name: str,
+    old: str,
+    new: str,
+    path: str,
+    recursive: bool = ...,
+    ignore_case: bool = ...,
+    glob: str = ...,
+    follow_links: bool = ...,
+    max_size: int = ...,
+    workdir: str = ...,
+) -> int: ...
+def sed_replace_pattern(
+    name: str,
+    pattern: str,
+    new: str,
+    path: str,
+    recursive: bool = ...,
+    ignore_case: bool = ...,
+    glob: str = ...,
+    follow_links: bool = ...,
+    max_size: int = ...,
+    workdir: str = ...,
+) -> int: ...
+def sed_extract(
+    name: str,
+    pattern: str,
+    path: str,
+    recursive: bool = ...,
+    ignore_case: bool = ...,
+    glob: str = ...,
+    follow_links: bool = ...,
+    max_size: int = ...,
+    workdir: str = ...,
+) -> list[dict[str, Any]]: ...
+def edit_file(
+    name: str,
+    file_path: str,
+    search: str,
+    replace: str,
+    workdir: str = ...,
+) -> int: ...
 def port_forward(source_space: str, local_port: int, remote_space: str, remote_port: int, persistent: bool = ..., force: bool = ...) -> bool: ...
 def port_list(name: str) -> list[dict[str, Any]]: ...
 def port_stop(name: str, local_port: int) -> bool: ...
