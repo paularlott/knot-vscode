@@ -48,7 +48,7 @@ def run(name: str, command: str, args: list[str] | None = ..., timeout: int = ..
 def run_script(name: str, script_name: str, args: list[str] | None = ...) -> dict[str, Any]: ...
 def eval(name: str, code: str, args: list[str] | None = ...) -> dict[str, Any]: ...
 def read_file(name: str, file_path: str, offset: int = ..., limit: int = ...) -> str: ...
-def write_file(name: str, file_path: str, content: str, mode: str = ...) -> bool: ...
+def write_file(name: str, file_path: str, content: str, mode: str = ..., mtime_ns: int | None = ..., file_perm: int | None = ...) -> bool: ...
 def grep(
     name: str,
     pattern: str,
@@ -76,6 +76,23 @@ def find(
     max_depth: int = ...,
     workdir: str = ...,
 ) -> list[str]: ...
+def find_entries(
+    name: str,
+    path: str = ...,
+    recursive: bool = ...,
+    type: str = ...,
+    name_glob: str = ...,
+    mtime_min: float | None = ...,
+    mtime_max: float | None = ...,
+    size_min: int | None = ...,
+    size_max: int | None = ...,
+    include_hidden: bool = ...,
+    follow_links: bool = ...,
+    max_depth: int = ...,
+    include_hash: bool = ...,
+    include_symlinks: bool = ...,
+    workdir: str = ...,
+) -> list[dict[str, Any]]: ...
 def sed_replace(
     name: str,
     old: str,
@@ -116,6 +133,12 @@ def edit_file(
     file_path: str,
     search: str,
     replace: str,
+    workdir: str = ...,
+) -> int: ...
+def delete_file(
+    name: str,
+    file_path: str,
+    recursive: bool = ...,
     workdir: str = ...,
 ) -> int: ...
 def port_forward(source_space: str, local_port: int, remote_space: str, remote_port: int, persistent: bool = ..., force: bool = ...) -> bool: ...
