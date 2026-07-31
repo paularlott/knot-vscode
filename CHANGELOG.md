@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.1.12
+
+- **Open in VSCode**: editing a server's address, token, or TLS setting now rewrites that server's existing `~/.ssh/config` host entries with the new connection params, so Remote-SSH reconnects and history entries stop reusing values baked in at open time. Previously only a fresh "Open in VSCode" refreshed the hosts, so reconnects and clicks on a host in Remote-SSH history failed after a token rotation.
+
 ## 0.1.7
 
 - **Space Pools**: pools are now visible in the tree view, grouped as collapsible nodes with their member spaces as children. Requires knot 0.27.0 or later.

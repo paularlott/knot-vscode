@@ -9,7 +9,7 @@ import { serverLabel } from './serverStore';
 import { PoolItem, SpaceItem, SpacesTreeProvider, StackItem } from './provider/spacesTreeProvider';
 import { createKnotTerminal } from './terminal/knotTerminal';
 import { createKnotLogsTerminal } from './terminal/spaceLogsTerminal';
-import { upsertKnotHost, removeKnotHost, removeKnotAliasBlock, aliasForServer } from './ssh';
+import { upsertKnotHost, removeKnotHost, removeKnotAliasBlock, aliasForServer, listKnotHostSpaces } from './ssh';
 
 export interface CommandContext {
     store: ServerStore;
@@ -95,6 +95,14 @@ async function cmdEditServer(ctx: CommandContext, serverId?: string): Promise<vo
         return;
     }
     await ctx.store.update(server.id, input);
+    // Re-write any existing SSH hosts for this server so Remote-SSH reconnects
+    // and history entries pick up the new address / token / TLS instead of the
+    // stale values baked into ~/.ssh/config at open time.
+    try {
+        await refreshServerSshHosts(ctx, server.id);
+    } catch {
+        // best-effort: SSH cleanup must not block a successful edit
+    }
     const conn = await ctx.ensureConnected(server.id);
     if (conn) {
         vscode.window.showInformationMessage(`Knot: updated "${serverLabel(server)}".`);
@@ -715,6 +723,24 @@ function doubleQuote(s: string): string {
     return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
+/** The managed host alias for a space under a server's alias block. */
+function sshHostForSpace(alias: string, spaceName: string): string {
+    return `knot.${spaceName}.${alias}`;
+}
+
+/** Build the `knot forward ssh` ProxyCommand line for a space. */
+function sshProxyCommand(cliPath: string, server: ServerConfig, spaceName: string): string {
+    return [
+        shellQuote(cliPath),
+        'forward',
+        'ssh',
+        `--server=${doubleQuote(server.address)}`,
+        `--token=${doubleQuote(server.token)}`,
+        `--tls-skip-verify=${server.insecure}`,
+        shellQuote(spaceName),
+    ].join(' ');
+}
+
 /** Open the space in a new VSCode window via Remote-SSH, using the knot CLI as the SSH proxy. */
 async function cmdOpenInVscode(ctx: CommandContext, item?: SpaceItem): Promise<void> {
     const space = item ?? (await pickSpace(ctx));
@@ -755,16 +781,8 @@ async function cmdOpenInVscode(ctx: CommandContext, item?: SpaceItem): Promise<v
     }
 
     const alias = aliasForServer(server.id);
-    const host = `knot.${space.space.name}.${alias}`;
-    const proxy = [
-        shellQuote(cliPath),
-        'forward',
-        'ssh',
-        `--server=${doubleQuote(server.address)}`,
-        `--token=${doubleQuote(server.token)}`,
-        `--tls-skip-verify=${server.insecure}`,
-        shellQuote(space.space.name),
-    ].join(' ');
+    const host = sshHostForSpace(alias, space.space.name);
+    const proxy = sshProxyCommand(cliPath, server, space.space.name);
 
     try {
         upsertKnotHost(alias, { host, proxyCommand: proxy, comment: `space "${space.space.name}" on ${serverLabel(server)}` });
@@ -821,6 +839,39 @@ function openRemoteWindow(folderUri: string): Promise<void> {
             resolve();
         }
     });
+}
+
+/**
+ * Re-write every SSH host registered for a server with fresh connection
+ * params (address / token / TLS / CLI path), so Remote-SSH reconnects and
+ * history entries stop reusing values baked into ~/.ssh/config at open time.
+ *
+ * No-op when the server has no hosts yet (never opened via "Open in VSCode",
+ * or all its spaces have since been pruned) — so editing such a server writes
+ * nothing.
+ */
+async function refreshServerSshHosts(ctx: CommandContext, serverId: string): Promise<void> {
+    const server = ctx.store.get(serverId);
+    if (!server) {
+        return;
+    }
+    const alias = aliasForServer(serverId);
+    const spaceNames = listKnotHostSpaces(alias);
+    if (spaceNames.length === 0) {
+        return;
+    }
+    const cliPath = getCliPath();
+    for (const spaceName of spaceNames) {
+        try {
+            upsertKnotHost(alias, {
+                host: sshHostForSpace(alias, spaceName),
+                proxyCommand: sshProxyCommand(cliPath, server, spaceName),
+                comment: `space "${spaceName}" on ${serverLabel(server)}`,
+            });
+        } catch {
+            // best-effort: one bad host must not abort the rest
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

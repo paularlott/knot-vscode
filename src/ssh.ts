@@ -161,6 +161,35 @@ export function removeKnotHost(alias: string, host: string): void {
     writeConfig(cfgPath, content);
 }
 
+/**
+ * Return the space names for every host currently registered under the given
+ * alias (i.e. every space previously opened via "Open in VSCode"). Used to
+ * refresh the connection params baked into each ProxyCommand when a server's
+ * address / token / TLS setting changes.
+ */
+export function listKnotHostSpaces(alias: string): string[] {
+    const cfgPath = sshConfigPath();
+    const content = readConfig(cfgPath);
+    if (!content) {
+        return [];
+    }
+    const { start, end } = markers(alias);
+    const blockRe = new RegExp(escapeRegex(start) + '[\\s\\S]*?' + escapeRegex(end) + '\\n?', 'g');
+    const existing = content.match(blockRe);
+    if (!existing) {
+        return [];
+    }
+    const inner = existing[0]
+        .replace(new RegExp('^' + escapeRegex(start) + '\\n'), '')
+        .replace(new RegExp('\\n?' + escapeRegex(end) + '\\n?$'), '');
+    const prefix = 'knot.';
+    const suffix = `.${alias}`;
+    return parseHostBlocks(inner)
+        .map((b) => b.host)
+        .filter((h) => h.startsWith(prefix) && h.endsWith(suffix))
+        .map((h) => h.slice(prefix.length, h.length - suffix.length));
+}
+
 /** Remove the entire managed alias block for a server. */
 export function removeKnotAliasBlock(alias: string): void {
     const cfgPath = sshConfigPath();
