@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.1.13
+
+- **Python IntelliSense**: added `knot.template.build_spec()` to the bundled type stubs — autocompletion, hover docs, and type checking for the new spec-building helper that converts a unified spec (image, env vars, ports, storage, resources) into native Nomad HCL or container YAML, the programmatic equivalent of the UI spec wizard.
+
 ## 0.1.12
 
 - **Open in VSCode**: editing a server's address, token, or TLS setting now rewrites that server's existing `~/.ssh/config` host entries with the new connection params, so Remote-SSH reconnects and history entries stop reusing values baked in at open time. Previously only a fresh "Open in VSCode" refreshed the hosts, so reconnects and clicks on a host in Remote-SSH history failed after a token rotation.
