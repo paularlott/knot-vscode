@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.1.14
+
+- **Python IntelliSense**: type stubs updated to match the latest knot libraries — new `knot.healthcheck`, `knot.slash_command`, and `knot.methods.schema` modules.
+
 ## 0.1.13
 
 - **Python IntelliSense**: added `knot.template.build_spec()` to the bundled type stubs — autocompletion, hover docs, and type checking for the new spec-building helper that converts a unified spec (image, env vars, ports, storage, resources) into native Nomad HCL or container YAML, the programmatic equivalent of the UI spec wizard.
