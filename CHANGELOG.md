@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.1.15
+
+- **Python IntelliSense**: new `knot.jobs` type stub — autocompletion, hover docs, and type checking for the space jobs library (`list`, `run`, `add`, `update`, `remove`, `enable`, `disable`, `enable_runner`, `disable_runner`); `knot.template` create/update gained a `jobs` parameter. Requires knot 0.33.0 or later.
+
 ## 0.1.14
 
 - **Python IntelliSense**: type stubs updated to match the latest knot libraries — new `knot.healthcheck`, `knot.slash_command`, and `knot.methods.schema` modules.
