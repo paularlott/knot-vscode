@@ -1,4 +1,6 @@
 """AI client access (delegates to scriptling.ai)."""
 from typing import Any
 def get_default_model() -> str: ...
+    """Get the server-configured default model name"""
 def Client() -> Any: ...
+    """Get a pre-configured AI client instance connected to the server's AI provider with MCP tools available"""

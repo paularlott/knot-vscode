@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.0
+
+- **Python IntelliSense**: all `knot.*` type stubs now carry full docstrings (170 functions across 20 modules) — hover documentation and inline help in VS Code match the web editor's descriptions instead of showing bare signatures. New `knot.space.wait_for_start(name, timeout=30, interval=2)` stub for the space-start wait function (requires knot 0.33.0 or later).
+
 ## 0.1.15
 
 - **Python IntelliSense**: new `knot.jobs` type stub — autocompletion, hover docs, and type checking for the space jobs library (`list`, `run`, `add`, `update`, `remove`, `enable`, `disable`, `enable_runner`, `disable_runner`); `knot.template` create/update gained a `jobs` parameter. Requires knot 0.33.0 or later.
