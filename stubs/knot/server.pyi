@@ -1,4 +1,5 @@
 """Server information."""
 from typing import Any
-def info() -> dict[str, Any]: ...
+def info() -> dict[str, Any]:
     """Get server-wide information"""
+    ...
