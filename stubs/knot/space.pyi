@@ -15,11 +15,15 @@ def create(
     description: str = ...,
     shell: str = ...,
     depends_on: builtins.list[str] | None = ...,
+    stack: str = ...,
+    selected_node_id: str = ...,
+    alt_names: builtins.list[str] | None = ...,
     icon_url: str = ...,
     custom_fields: builtins.list[dict[str, str]] | None = ...,
+    startup_script_id: str = ...,
     start_on_create: bool = ...,
 ) -> str:
-    """Create a new space"""
+    """Create a new space and return its ID"""
     ...
 def update(
     name: str,
@@ -27,13 +31,15 @@ def update(
     description: str | None = ...,
     shell: str | None = ...,
     template_name: str | None = ...,
+    depends_on: builtins.list[str] | None = ...,
+    stack: str | None = ...,
+    selected_node_id: str | None = ...,
+    alt_names: builtins.list[str] | None = ...,
     icon_url: str | None = ...,
     custom_fields: builtins.list[dict[str, str]] | None = ...,
-    start: bool = ...,
-    stop: bool = ...,
-    restart: bool = ...,
+    startup_script_id: str | None = ...,
 ) -> bool:
-    """Update space properties while preserving fields not passed"""
+    """Update space properties while preserving fields not passed. Lifecycle changes use start()/stop()/restart()."""
     ...
 def delete(name: str) -> bool:
     """Delete a space by name"""
