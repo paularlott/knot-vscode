@@ -7,10 +7,10 @@ def list() -> builtins.list[dict[str, Any]]:
 def get(role_id: str) -> dict[str, Any]:
     """Get role by ID (UUID only)"""
     ...
-def create(name: str, permissions: builtins.list[int] | None = ...) -> str:
+def create(name: str, permissions: builtins.list[int] | None = ..., plugin_permissions: builtins.list[str] | None = ...) -> str:
     """Create a new role"""
     ...
-def update(role_id: str, name: str | None = ..., permissions: builtins.list[int] | None = ...) -> bool:
+def update(role_id: str, name: str | None = ..., permissions: builtins.list[int] | None = ..., plugin_permissions: builtins.list[str] | None = ...) -> bool:
     """Update role properties"""
     ...
 def delete(role_id: str) -> bool:

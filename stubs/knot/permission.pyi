@@ -1,4 +1,7 @@
 """Permission constants for role management."""
+
+import builtins
+from typing import Any
 MANAGE_USERS: int
 MANAGE_GROUPS: int
 MANAGE_ROLES: int
@@ -43,6 +46,10 @@ MANAGE_GLOBAL_SLASH_COMMANDS: int
 MANAGE_OWN_SLASH_COMMANDS: int
 MANAGE_MCP_SERVERS: int
 VIEW_PLUGINS: int
+
+def list_plugin() -> builtins.list[dict[str, Any]]:
+    """List the permissions declared by loaded plugins: dicts with id (the qualified grant, e.g. "plugin.metrics.read"), plugin (the declaring plugin's name) and label (the declared id)."""
+    ...
 
 # Aliases
 SPACE_MANAGE: int

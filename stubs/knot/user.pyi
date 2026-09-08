@@ -31,6 +31,10 @@ def get_quota(user_id: str) -> dict[str, Any]:
 def list_permissions(user_id: str) -> builtins.list[dict[str, Any]]:
     """List all permissions for a user"""
     ...
-def has_permission(user_id: str, permission_id: int) -> bool:
+
+def list_plugin_permissions(user_id: str) -> builtins.list[str]:
+    """List the plugin permissions a user holds: qualified grant strings (e.g. "plugin.metrics.read") resolved from their roles; admins hold every grant."""
+    ...
+def has_permission(user_id: str, permission_id: int | str) -> bool:
     """Check if user has a specific permission"""
     ...
