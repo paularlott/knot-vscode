@@ -1,18 +1,18 @@
-"""The globals every dispatch binds: params, request and user.
+"""The `user` global user-created MCP tools see, and the User class.
 
-Plugin handler dispatches, MCP tool calls and script tool executions
-receive their world through globals — `params` (the call's parameters as
-a dict), `request` (method and path) and `user` (a User instance
-describing the requesting user). The metadata gates knot enforces before
-code runs remain the security boundary; these globals are data and
-in-code decision surfaces.
+Plugin handlers receive no globals: their single `request` argument
+carries {method, path, params, user} — with `user` an inert identity
+snapshot for branching, not authority. The authoritative identity
+surface everywhere is knot.identity. This global exists only in the
+MCP-tool environment, where a tool script has no request to read.
 """
 
 
 class User:
     """The requesting user's identity and effective permissions.
 
-    Bound as the `user` global on every dispatch. Admins pass every
+    Bound as the `user` global in user-created MCP tools; returned by
+    knot.identity.user() everywhere identity matters. Admins pass every
     permission check by construction.
     """
 
