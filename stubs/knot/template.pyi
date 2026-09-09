@@ -22,8 +22,10 @@ def create(name: str, job: str = ..., description: str = ..., platform: str = ..
     custom_fields declares the template's custom fields: a list of dicts with
     name, description, type ("text", "masked", "number", "bool", "autocomplete"
     or "textarea"), handler (a plugin field handler id, autocomplete only),
-    language (the editor language, textarea only) and default — a bool default
-    becomes the string "true"/"false"; values are stored as strings.
+    language (the editor language, textarea only), default — a bool default
+    becomes the string "true"/"false"; values are stored as strings — and
+    required (bool): a required field cannot be blank when creating or editing
+    a space, and the default can satisfy the requirement.
     """
     ...
 def update(template_id: str, name: str | None = ..., job: str | None = ..., description: str | None = ..., platform: str | None = ..., custom_fields: builtins.list[dict[str, Any]] | None = ..., **kwargs: Any) -> bool:
