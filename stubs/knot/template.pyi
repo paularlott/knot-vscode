@@ -1,11 +1,14 @@
 """Manage space templates."""
 import builtins
 from typing import Any
-def list(include_inactive: bool = ...) -> builtins.list[dict[str, Any]]:
-    """List templates visible to the current user. Defaults to active templates only; pass include_inactive=True to include retired ones."""
+def field_options(handler_id: str) -> builtins.list[str] | None:
+    """Resolve a plugin field handler's option keys as the requesting user — the exact values the space form offers and the API's validation accepts. None when the handler cannot be reached."""
     ...
-def get(template_id: str) -> dict[str, Any]:
-    """Get template by ID or name"""
+def list(include_inactive: bool = ..., resolve_options: bool = ...) -> builtins.list[dict[str, Any]]:
+    """List templates visible to the current user. Defaults to active templates only; pass include_inactive=True to include retired ones. With resolve_options=True, handler-backed custom fields carry their options resolved live (one plugin call per field) instead of naming their handler."""
+    ...
+def get(template_id: str, resolve_options: bool = ...) -> dict[str, Any]:
+    """Get template by ID or name. With resolve_options=True, handler-backed custom fields carry their options resolved live instead of naming their handler."""
     ...
 def validate(platform: str, job: str = ..., volumes: str = ...) -> dict[str, Any]:
     """Validate template job and volume specifications without saving"""

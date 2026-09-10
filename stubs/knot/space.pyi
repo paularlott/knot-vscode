@@ -237,8 +237,8 @@ def port_throttle(name: str, local_port: int, latency_ms: int = ..., jitter_ms: 
 def port_apply(source_space: str, forwards: builtins.list[dict[str, Any]]) -> bool:
     """Replace all port forwards for a space"""
     ...
-def tunnel_start(space: str, protocol: str, port: int, name: str) -> str:
-    """Start an agent-owned web tunnel in a space, exposing <port> as <user>--<name>.<domain>. Owned by the space's agent; not persisted."""
+def tunnel_start(space: str, protocol: str, port: int, name: str, server: str = ..., token: str = ...) -> str:
+    """Start an agent-owned web tunnel in a space, exposing <port> as <user>--<name>.<domain>. Owned by the space's agent; not persisted. Pass both server and token to create the tunnel on a different knot server the space can reach."""
     ...
 def tunnel_list(space: str) -> builtins.list[dict[str, Any]]:
     """List agent-owned web tunnels in a space"""
