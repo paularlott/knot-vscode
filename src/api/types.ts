@@ -161,6 +161,8 @@ export interface ServerInfo {
     version: string;
     /** Server wildcard domain for space web-port URLs (e.g. "*.knot.example.com"). */
     wildcard_domain: string;
+    /** Server tunnel domain as a dot-prefixed suffix (e.g. ".tunnel.example.com"), appended straight after a tunnel name. */
+    tunnel_domain: string;
 }
 
 export interface Template {
