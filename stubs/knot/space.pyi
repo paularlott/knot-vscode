@@ -21,9 +21,10 @@ def create(
     icon_url: str = ...,
     custom_fields: builtins.list[dict[str, str]] | None = ...,
     startup_script_id: str = ...,
+    ip_address: str = ...,
     start_on_create: bool = ...,
 ) -> str:
-    """Create a new space and return its ID"""
+    """Create a new space and return its ID. ip_address sets the static IP for bridged KVM templates (validated against the template's range); unused by other platforms."""
     ...
 def update(
     name: str,
@@ -38,8 +39,9 @@ def update(
     icon_url: str | None = ...,
     custom_fields: builtins.list[dict[str, str]] | None = ...,
     startup_script_id: str | None = ...,
+    ip_address: str | None = ...,
 ) -> bool:
-    """Update space properties while preserving fields not passed. Lifecycle changes use start()/stop()/restart()."""
+    """Update space properties while preserving fields not passed. Lifecycle changes use start()/stop()/restart(). ip_address (bridged KVM only) requires the space stopped; applied at next boot."""
     ...
 def delete(name: str) -> bool:
     """Delete a space by name"""
@@ -73,6 +75,12 @@ def set_description(name: str, description: str) -> bool:
     ...
 def get_description(name: str) -> str:
     """Get space description"""
+    ...
+def get_ip_address(name: str) -> str:
+    """Get a bridged KVM space's static IP address (empty for other platforms)"""
+    ...
+def set_ip_address(name: str, ip_address: str) -> bool:
+    """Set or change a bridged KVM space's static IP; requires the space stopped, applied at next boot"""
     ...
 def get_dependencies(name: str) -> builtins.list[str]:
     """Get dependency space IDs for a space"""
