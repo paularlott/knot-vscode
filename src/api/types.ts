@@ -271,6 +271,10 @@ export interface PoolMemberInfo {
     is_pending: boolean;
     is_deleting: boolean;
     is_deployed: boolean;
+    /** "" = free, "active" = exclusively leased, "draining" = lease ended, waiting for in-flight work. */
+    lease_state?: string;
+    lease_holder?: string;
+    lease_expires_at?: string | null;
 }
 
 export interface PoolInfo {
@@ -281,6 +285,10 @@ export interface PoolInfo {
     desired_count: number;
     alive_members: number;
     active: boolean;
+    /** Lease maximum in seconds: 0 = leases disabled, -1 = no timeout. */
+    lease_max_time: number;
+    /** 0 = extending forbidden, -1 = unlimited. */
+    lease_max_extensions: number;
     utilization: PoolUtilization;
     members: PoolMemberInfo[];
 }

@@ -1,6 +1,8 @@
-"""Manage space pools — fixed-size, self-healing groups of identical spaces."""
+"""Manage space pools — fixed-size, self-healing groups of identical spaces,
+with optional exclusive member leases."""
 
 import builtins
+import contextlib
 from typing import Any
 
 def list() -> builtins.list[dict[str, Any]]:
@@ -27,3 +29,25 @@ def start(name: str) -> bool:
 def stop(name: str) -> bool:
     """Stop a running pool: stops all member spaces without deleting them"""
     ...
+def acquire(name: str, time: str | int | None = ..., wait: str | int | None = ...) -> dict[str, Any]:
+    """Acquire a pool member exclusively until the lease ends (requires a
+    lease-enabled pool). time: None = the pool's maximum, "none" = never
+    expire (unlimited pools only), seconds or "5m"-style string. wait:
+    optionally wait this long for a free member before raising. Returns the
+    lease dict — the held member is space_name / space_id."""
+    ...
+def extend(name: str, lease_id: str, time: str | int | None = ...) -> dict[str, Any]:
+    """Extend a held lease: the new deadline is now + time (or never, on
+    unlimited pools). Bounded by the pool's max extension count."""
+    ...
+def release(name: str, lease_id: str) -> dict[str, Any]:
+    """Release a held lease early. The member returns to the pool after
+    in-flight work drains (normally within ~15s)."""
+    ...
+def leases(name: str) -> builtins.list[dict[str, Any]]:
+    """List the pool's held leases — active plus draining"""
+    ...
+class leased(contextlib.AbstractContextManager[dict[str, Any]]):
+    """Context manager for exclusive pool member use; releases on exit."""
+    def __init__(self, name: str, time: str | int | None = ..., wait: str | int | None = ...) -> None: ...
+    lease: dict[str, Any]
