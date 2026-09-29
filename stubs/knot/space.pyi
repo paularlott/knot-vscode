@@ -231,7 +231,7 @@ def delete_file(
     workdir: str = ...,
 ) -> int: ...
 def port_forward(source_space: str, local_port: int, remote_space: str, remote_port: int, persistent: bool = ..., force: bool = ...) -> bool:
-    """Forward a local port to a remote space port"""
+    """Forward a local port to a remote port. remote_space is a target reference: a space or pool name you own, another user's space or pool as user--space (only ports its template declares shared), or a space ID."""
     ...
 def port_list(name: str) -> builtins.list[dict[str, Any]]:
     """List active port forwards for a space"""

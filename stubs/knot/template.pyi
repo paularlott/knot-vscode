@@ -20,7 +20,7 @@ def nodes(template_id: str) -> builtins.list[dict[str, Any]]:
     """List available placement nodes for a local-container template"""
     ...
 def create(name: str, job: str = ..., description: str = ..., platform: str = ..., volumes: str = ..., active: bool = ..., custom_fields: builtins.list[dict[str, Any]] | None = ..., **kwargs: Any) -> str:
-    """Create a new template. health_check_type can be none, agent, tcp, http, program, or custom. ports is a list of {name, port, protocol} objects; jobs is a list of {name, command, schedule, enabled} objects copied into new spaces; custom_fields declares the template's custom fields.
+    """Create a new template. health_check_type can be none, agent, tcp, http, program, or custom. ports is a list of {name, port, protocol} objects, protocol one of "http", "https", "tcp" or "shared" (a shared port is reachable by every user in the same zone through a port forward as user--space, not just the space's owner; http/https get dev URLs, tcp is published on the host); port_forwards is a list of {local_port, space, remote_port} dicts seeded into spaces created from the template and connected when they start (space: a space or pool name, or user--name for another user's shared port); jobs is a list of {name, command, schedule, enabled} objects copied into new spaces; custom_fields declares the template's custom fields. max_uptime / max_uptime_unit and idle_timeout / idle_timeout_unit control the max-runtime and idle auto-stops (unit one of "minute", "hour", "day"; "disabled" or a 0 value turns the stop off).
 
     custom_fields declares the template's custom fields: a list of dicts with
     name, description, type ("text", "masked", "number", "bool", "select", "autocomplete"
@@ -33,7 +33,7 @@ def create(name: str, job: str = ..., description: str = ..., platform: str = ..
     """
     ...
 def update(template_id: str, name: str | None = ..., job: str | None = ..., description: str | None = ..., platform: str | None = ..., custom_fields: builtins.list[dict[str, Any]] | None = ..., **kwargs: Any) -> bool:
-    """Update template properties, including health_check_type, health_check_auto_restart, ports and jobs. custom_fields, when given, replaces the template's custom fields (same shape as create); omitted leaves them unchanged."""
+    """Update template properties, including health_check_type, health_check_auto_restart, max_uptime, idle_timeout, ports, jobs and port_forwards. Omitted properties are left unchanged. max_uptime / idle_timeout units are one of "minute", "hour", "day"; "disabled" (or a 0 value for idle) turns the stop off. custom_fields, when given, replaces the template's custom fields (same shape as create); omitted leaves them unchanged."""
     ...
 def delete(template_id: str) -> bool:
     """Delete a template by ID or name"""
