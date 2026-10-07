@@ -21,6 +21,8 @@ export interface ConnectedServer {
     version: string;
     /** Server-wide wildcard domain (fetched at connect), used for web-port URLs. */
     wildcardDomain: string;
+    /** Whether file storage is enabled on the server; undefined on servers too old to say. */
+    filesEnabled?: boolean;
 }
 
 const STORAGE_KEY = 'knot.servers';
@@ -138,14 +140,16 @@ export class ServerStore implements vscode.Disposable {
             // servers without /api/server-info just yield empty values.
             let wildcardDomain = '';
             let version = '';
+            let filesEnabled: boolean | undefined;
             try {
                 const info = await client.getServerInfo();
                 wildcardDomain = info.wildcard_domain ?? '';
                 version = info.version ?? '';
+                filesEnabled = info.files_enabled;
             } catch {
                 // ignore — features degrade gracefully
             }
-            const connected: ConnectedServer = { config, client, user, version, wildcardDomain };
+            const connected: ConnectedServer = { config, client, user, version, wildcardDomain, filesEnabled };
             this.connections.set(id, connected);
             return connected;
         } catch (err) {

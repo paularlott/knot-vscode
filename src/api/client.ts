@@ -1,6 +1,8 @@
 import { HttpClient } from './http';
 import type {
     CreateSpaceResponse,
+    FileBucketList,
+    FileObjectList,
     PortApplyRequest,
     PoolList,
     ReadFileRequest,
@@ -178,5 +180,72 @@ export class KnotClient {
 
     dispose(): void {
         this.http.dispose();
+    }
+
+    // ---- File storage ----
+    listFileBuckets(): Promise<FileBucketList> {
+        return this.http.get<FileBucketList>('/api/files/buckets');
+    }
+
+    /** One page of a bucket listing. With a delimiter, folders come back as prefixes. */
+    listFileObjects(bucket: string, prefix: string, delimiter: string, after = ''): Promise<FileObjectList> {
+        const qs =
+            `prefix=${encodeURIComponent(prefix)}&delimiter=${encodeURIComponent(delimiter)}` +
+            `&after=${encodeURIComponent(after)}&limit=1000`;
+        return this.http.get<FileObjectList>(`/api/files/list/${encodeURIComponent(bucket)}?${qs}`);
+    }
+
+    private fileUrl(bucket: string, key: string): string {
+        const k = key.split('/').map(encodeURIComponent).join('/');
+        return `/api/files/objects/${encodeURIComponent(bucket)}/${k}`;
+    }
+
+    /** A file's size, ETag and modification time, or undefined if there is no such file. */
+    async statFile(bucket: string, key: string): Promise<{ size: number; etag: string; mtime: number } | undefined> {
+        const res = await this.http.requestRaw({ method: 'HEAD', path: this.fileUrl(bucket, key), allow: [404] });
+        if (res.status === 404) {
+            return undefined;
+        }
+        const modified = Date.parse(String(res.headers['last-modified'] ?? ''));
+        return {
+            size: Number(res.headers['content-length'] ?? 0),
+            etag: String(res.headers['etag'] ?? '').replace(/"/g, ''),
+            mtime: Number.isNaN(modified) ? Date.now() : modified,
+        };
+    }
+
+    async readFileContent(bucket: string, key: string): Promise<Buffer> {
+        const res = await this.http.requestRaw({ method: 'GET', path: this.fileUrl(bucket, key) });
+        return res.body;
+    }
+
+    /**
+     * Writes a file. With `ifMatch` the write only replaces the version with that
+     * ETag; with `ifAbsent` it only creates. Either refusal is a 412.
+     */
+    async writeFileContent(
+        bucket: string,
+        key: string,
+        data: Buffer,
+        opts: { ifMatch?: string; ifAbsent?: boolean } = {},
+    ): Promise<void> {
+        const headers: Record<string, string> = { 'Content-Type': 'application/octet-stream' };
+        if (opts.ifMatch) {
+            headers['If-Match'] = `"${opts.ifMatch}"`;
+        }
+        if (opts.ifAbsent) {
+            headers['If-None-Match'] = '*';
+        }
+        await this.http.requestRaw({ method: 'PUT', path: this.fileUrl(bucket, key), body: data, headers });
+    }
+
+    async deleteFileObject(bucket: string, key: string): Promise<void> {
+        await this.http.requestRaw({ method: 'DELETE', path: this.fileUrl(bucket, key) });
+    }
+
+    /** Renames a file, or a folder and everything under it, within a bucket, on the server. */
+    async moveFileObjects(bucket: string, from: string, to: string, overwrite: boolean): Promise<number> {
+        const res = await this.http.post<{ moved: number }>('/api/files/move', { bucket, from, to, overwrite }, 200);
+        return res.moved;
     }
 }

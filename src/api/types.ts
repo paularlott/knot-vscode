@@ -157,6 +157,8 @@ export interface UserResponse {
 }
 
 export interface ServerInfo {
+    /** Whether file storage is enabled on this server (absent on older servers). */
+    files_enabled?: boolean;
     /** knot server version string. */
     version: string;
     /** Server wildcard domain for space web-port URLs (e.g. "*.knot.example.com"). */
@@ -296,4 +298,36 @@ export interface PoolInfo {
 export interface PoolList {
     count: number;
     pools: PoolInfo[];
+}
+
+// ---- File storage ----
+
+export interface FileBucketInfo {
+    /** Full name, "<owner>--<name>": what the file endpoints take. */
+    name: string;
+    /** The short name for the caller's own buckets, else the full name. */
+    display_name: string;
+    owner_name: string;
+    /** The caller's access: "owner", "write" or "read". */
+    access: string;
+    size: number;
+    count: number;
+}
+
+export interface FileBucketList {
+    buckets: FileBucketInfo[];
+}
+
+export interface FileObjectInfo {
+    key: string;
+    size: number;
+    etag: string;
+    modified_at: string;
+}
+
+export interface FileObjectList {
+    objects: FileObjectInfo[];
+    prefixes: string[];
+    is_truncated: boolean;
+    next: string;
 }

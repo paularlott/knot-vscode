@@ -4,6 +4,9 @@ import { ServerStore } from './serverStore';
 import type { ServerStatus, ServerView } from './provider/spacesTreeProvider';
 import { SpacesTreeProvider } from './provider/spacesTreeProvider';
 import { registerCommands } from './commands';
+import { KnotFileSystem, SCHEME } from './files/knotFileSystem';
+import { FilesTreeProvider } from './files/filesTreeProvider';
+import { registerFilesCommands } from './files/filesCommands';
 import { describeError, getAutoRefresh, getRefreshInterval } from './session';
 import type { PoolInfo, SpaceInfo } from './api/types';
 
@@ -24,6 +27,35 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         showCollapseAll: true,
     });
     context.subscriptions.push(treeView);
+
+    // File storage: a file system under knotfs:// and a view of it. Servers
+    // without file storage are left out of the view and refuse the file system.
+    const knotFs = new KnotFileSystem(async (id) => ensureConnected(id));
+    const filesTree = new FilesTreeProvider(store, async (id) => ensureConnected(id));
+    // File storage must not take the rest of the extension with it: if the
+    // window predates the Files view (an update was installed under a running
+    // window), the view is not registered and creating it throws.
+    try {
+        context.subscriptions.push(
+            vscode.workspace.registerFileSystemProvider(SCHEME, knotFs, { isCaseSensitive: true }),
+            vscode.window.createTreeView('knot.files', {
+                treeDataProvider: filesTree,
+                showCollapseAll: true,
+                dragAndDropController: filesTree,
+            }),
+            knotFs.onDidChangeFile(() => filesTree.refresh()),
+            ...registerFilesCommands(store, filesTree, knotFs),
+        );
+    } catch (err) {
+        void vscode.window.showWarningMessage(
+            `Knot: file storage is unavailable (${describeError(err)}). Reload the window to finish updating the extension.`,
+            'Reload Window',
+        ).then((choice) => {
+            if (choice === 'Reload Window') {
+                void vscode.commands.executeCommand('workbench.action.reloadWindow');
+            }
+        });
+    }
 
     // Per-server runtime state.
     const status = new Map<string, ServerStatus>();
@@ -64,6 +96,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             const conn = await store.connect(id);
             status.set(id, 'connected');
             render();
+            // Now it is known whether the server has file storage.
+            filesTree.refresh();
             return conn;
         } catch (err) {
             status.set(id, 'error');
@@ -132,6 +166,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                     errors.delete(id);
                 }
             }
+            filesTree.refresh();
             // (Re)load any server we don't yet have data for.
             await Promise.all(
                 store.list().map(async (s) => {
@@ -193,6 +228,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Boot: load persisted servers, connect to each, then poll if visible.
     await store.load();
     render();
+    // The Files view first asked before the servers were loaded.
+    filesTree.refresh();
     await Promise.all(store.list().map((s) => loadSpaces(s.id)));
     startPolling();
 }

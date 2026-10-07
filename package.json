@@ -2,7 +2,7 @@
   "name": "knot-vscode",
   "displayName": "Knot",
   "description": "Manage Knot cloud development environments from VS Code: list, create, start/stop/restart, web terminal, and run commands in spaces.",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "publisher": "paularlott",
   "license": "Apache-2.0",
   "repository": {
@@ -24,8 +24,10 @@
   ],
   "icon": "media/icon.png",
   "activationEvents": [
-    "onView:knot.spaces",
-    "onCommand:knot.addServer"
+    "onCommand:knot.addServer",
+    "onFileSystem:knotfs",
+    "onView:knot.files",
+    "onView:knot.spaces"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -43,6 +45,10 @@
         {
           "id": "knot.spaces",
           "name": "Spaces"
+        },
+        {
+          "id": "knot.files",
+          "name": "Files"
         }
       ]
     },
@@ -238,6 +244,48 @@
         "title": "Open Web Port",
         "category": "Knot",
         "icon": "$(globe)"
+      },
+      {
+        "command": "knot.files.refresh",
+        "title": "Refresh Files",
+        "category": "Knot",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "knot.files.addToWorkspace",
+        "title": "Add to Workspace",
+        "category": "Knot",
+        "icon": "$(add)"
+      },
+      {
+        "command": "knot.files.rename",
+        "title": "Rename",
+        "category": "Knot",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "knot.files.delete",
+        "title": "Delete",
+        "category": "Knot",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "knot.files.newFile",
+        "title": "New File",
+        "category": "Knot",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "knot.files.upload",
+        "title": "Upload Files or Folders",
+        "category": "Knot",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "knot.files.move",
+        "title": "Move",
+        "category": "Knot",
+        "icon": "$(arrow-right)"
       }
     ],
     "menus": {
@@ -251,6 +299,11 @@
           "command": "knot.refresh",
           "when": "view == knot.spaces",
           "group": "navigation@2"
+        },
+        {
+          "command": "knot.files.refresh",
+          "when": "view == knot.files",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [
@@ -443,6 +496,72 @@
           "command": "knot.deletePool",
           "when": "view == knot.spaces && viewItem == knot-pool-stopped",
           "group": "3_delete@1"
+        },
+        {
+          "command": "knot.files.addToWorkspace",
+          "when": "view == knot.files && viewItem =~ /^knot-files-(bucket|folder)/",
+          "group": "inline@1"
+        },
+        {
+          "command": "knot.files.addToWorkspace",
+          "when": "view == knot.files && viewItem =~ /^knot-files-(bucket|folder)/",
+          "group": "1_files@1"
+        },
+        {
+          "command": "knot.files.rename",
+          "when": "view == knot.files && viewItem =~ /^knot-files-(file|folder)$/",
+          "group": "2_files@1"
+        },
+        {
+          "command": "knot.files.delete",
+          "when": "view == knot.files && viewItem =~ /^knot-files-(file|folder)$/",
+          "group": "2_files@2"
+        },
+        {
+          "command": "knot.files.newFile",
+          "when": "view == knot.files && viewItem =~ /^knot-files-(bucket|folder)$/",
+          "group": "inline@2"
+        },
+        {
+          "command": "knot.files.newFile",
+          "when": "view == knot.files && viewItem =~ /^knot-files-(bucket|folder)$/",
+          "group": "0_new@1"
+        },
+        {
+          "command": "knot.files.upload",
+          "when": "view == knot.files && viewItem =~ /^knot-files-(bucket|folder)$/",
+          "group": "0_new@3"
+        },
+        {
+          "command": "knot.files.move",
+          "when": "view == knot.files && viewItem =~ /^knot-files-(file|folder)$/",
+          "group": "2_files@1.5"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "knot.files.addToWorkspace",
+          "when": "false"
+        },
+        {
+          "command": "knot.files.rename",
+          "when": "false"
+        },
+        {
+          "command": "knot.files.delete",
+          "when": "false"
+        },
+        {
+          "command": "knot.files.newFile",
+          "when": "false"
+        },
+        {
+          "command": "knot.files.upload",
+          "when": "false"
+        },
+        {
+          "command": "knot.files.move",
+          "when": "false"
         }
       ]
     },
@@ -476,7 +595,13 @@
           "markdownDescription": "Path to the `knot` CLI binary. Used as the SSH proxy command when opening a space in VSCode (Remote-SSH)."
         }
       }
-    }
+    },
+    "viewsWelcome": [
+      {
+        "view": "knot.files",
+        "contents": "No server with file storage is available.\n\nFile storage must be enabled on a server you have added to Knot, and its API token needs the files scope or full access. Servers are shared with the Spaces view.\n[Add Server](command:knot.addServer)"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

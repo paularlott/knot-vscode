@@ -99,6 +99,61 @@ export class HttpClient {
         });
     }
 
+    /**
+     * A request that carries and returns raw bytes with its headers, for file
+     * content. A status of 400 or more is an error, unless it is listed in
+     * `allow` (a 404 from a HEAD is an answer, not a failure).
+     */
+    requestRaw(opts: {
+        method: string;
+        path: string;
+        body?: Buffer;
+        headers?: Record<string, string>;
+        allow?: number[];
+    }): Promise<{ status: number; headers: http.IncomingHttpHeaders; body: Buffer }> {
+        const url = this.buildURL(opts.path);
+        return new Promise((resolve, reject) => {
+            const isHttps = url.protocol === 'https:';
+            const lib = isHttps ? https : http;
+            const headers: Record<string, string> = {
+                Authorization: `Bearer ${this.token}`,
+                ...(opts.headers ?? {}),
+            };
+            if (opts.body !== undefined) {
+                headers['Content-Length'] = String(opts.body.length);
+            }
+            const req = lib.request(
+                {
+                    method: opts.method,
+                    hostname: url.hostname,
+                    port: url.port || (isHttps ? 443 : 80),
+                    path: url.pathname + url.search,
+                    headers,
+                    agent: isHttps ? this.agent : undefined,
+                },
+                (res: http.IncomingMessage) => {
+                    const chunks: Buffer[] = [];
+                    res.on('data', (c: Buffer) => chunks.push(c));
+                    res.on('end', () => {
+                        const body = Buffer.concat(chunks);
+                        const status = res.statusCode ?? 0;
+                        if (status >= 400 && !(opts.allow ?? []).includes(status)) {
+                            const msg = extractError(body.toString('utf8')) || res.statusMessage || 'request failed';
+                            reject(new KnotHttpError(status, res.statusMessage ?? '', msg, opts.path));
+                            return;
+                        }
+                        resolve({ status, headers: res.headers, body });
+                    });
+                },
+            );
+            req.on('error', (err) => reject(err));
+            if (opts.body !== undefined) {
+                req.write(opts.body);
+            }
+            req.end();
+        });
+    }
+
     get<T>(path: string): Promise<T> {
         return this.request<T>({ method: 'GET', path });
     }

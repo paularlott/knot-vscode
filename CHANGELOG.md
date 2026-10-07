@@ -1,5 +1,40 @@
 # Change Log
 
+## 0.3.0
+
+- **File storage**: browse, read, edit, rename and delete the files in your Knot [file storage](https://getknot.dev/docs/file-storage/) buckets from VS Code. Requires knot 0.37.0 or later with file storage enabled.
+  - A new **Files** view lists each server that has file storage, its buckets (including ones shared with you), and their folders and files. Click a file to open it; **Add to Workspace** on a bucket or folder opens it in the Explorer, where files are edited and saved in place (`knotfs://`).
+  - Rename and delete work on files and on whole folders, and renaming happens on the server without moving any content. Buckets shared read-only open read-only.
+  - A save is refused, with a message, if the file changed on the server in the meantime.
+  - Servers without file storage are left out of the view, and the server's API token needs the `files` scope or full access.
+
+## 0.2.5
+
+- **Python IntelliSense**: new `knot.files` type stubs for the file storage library — `list_buckets`, `create_bucket`, `share_bucket`, `list_files`, `read_file`, `read_text`, `write_file`, `get_bytes`, `put_bytes` and the rest, with docstrings. `knot.apiclient` gained the matching helpers. Space and template stubs refreshed.
+
+## 0.2.4
+
+- **Pool leases**: `knot.pool` stubs for exclusive member leases — `acquire`, `extend`, `release`, `leases` and the `leased` context manager (with `destroy` to replace the member afterwards). Pool and server types gained the lease fields (`lease_state`, `lease_holder`, `lease_expires_at`, `lease_max_time`, `lease_max_extensions`) and the server's `tunnel_domain`.
+- **Python IntelliSense**: function stubs refined.
+
+## 0.2.3
+
+- **KVM spaces**: `knot.space.create` and `update` take `ip_address` for bridged KVM templates, and there are new `get_ip_address` / `set_ip_address` functions.
+- **Python IntelliSense**: new stubs and completions for
+  - `knot.token` (`list`, `create`, `delete`) and `knot.apiclient` (`configure`, `is_configured`);
+  - permissions and roles — `knot.permission`, `knot.role` and `knot.user` (`has_permission`, plugin permissions), including role create and update with `plugin_permissions`;
+  - plugins — `knot.plugin.user()` and `call()`, plus the dispatch `globals` (`params`, `request`, `user`);
+  - templates — custom field types and the `required` option, `field_options`, and `resolve_options` on `list` and `get`;
+  - tunnels — `tunnel_start`.
+
+## 0.2.2
+
+- **Python IntelliSense**: the `User` class available to plugin and tool scripts (`has_permission`, `in_group`) and the new permission and globals stubs.
+
+## 0.2.1
+
+- **Python IntelliSense**: `knot.space.create` and `update` stubs gained the missing parameters (`stack`, `selected_node_id`, `alt_names`, `startup_script_id`, `depends_on`) and no longer list lifecycle arguments that belong to `start`, `stop` and `restart`.
+
 ## 0.2.0
 
 - **Python IntelliSense**: all `knot.*` type stubs now carry full docstrings (170 functions across 20 modules) — hover documentation and inline help in VS Code match the web editor's descriptions instead of showing bare signatures. New `knot.space.wait_for_start(name, timeout=30, interval=2)` stub for the space-start wait function (requires knot 0.33.0 or later).

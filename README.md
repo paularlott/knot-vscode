@@ -15,6 +15,7 @@ Manage [Knot](https://getknot.dev) cloud development environments directly from 
 - **Open in VSCode** — open a running, SSH-enabled space in a new VSCode window via Remote-SSH (the extension wires up `~/.ssh/config` and uses the `knot` CLI as the SSH proxy).
 - **Open code-server** or the space's web page in your browser.
 - **Web ports** — running spaces that expose HTTP ports expand to show each dev URL (including alt-name aliases); click one to open it in your browser.
+- **File storage** — browse a server's file storage buckets in a **Files** view, open files, and add a bucket or folder to the workspace to edit it in place; rename and delete work too. Needs file storage enabled on the server (knot 0.37.0 or later); servers without it are left out of the view.
 - **Auto-refresh** — polls for status changes **only while the Knot view is visible**, with a short burst-poll right after lifecycle actions.
 
 ## Getting started
@@ -61,6 +62,9 @@ These are also available on a server node's context menu (right-click).
 | `Knot: Open Code-Server`             | Open code-server in a browser                                      |
 | `Knot: Open in Browser` | Open the space page |
 | `Knot: Open in VSCode` | Open the space in a new VSCode window via Remote-SSH |
+| `Knot: Refresh Files` | Reload the Files view |
+| `Knot: Add to Workspace` | Add a bucket or folder to the workspace (Files view) |
+| `Knot: Rename` / `Knot: Delete` | Rename or delete a file or folder (Files view) |
 
 ## Configuration
 
