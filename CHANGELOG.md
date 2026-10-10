@@ -9,6 +9,7 @@
   - Changes made elsewhere (the web interface, `knot file`, S3) appear in the Files view and the Explorer as they happen, and open editors reload, via the server's event stream; polling backs it up and **Refresh** looks again on demand.
   - Servers without file storage are left out of the view, and the server's API token needs the `files` scope or full access.
 - **Live Spaces view**: space and pool changes now arrive over the server's event stream instead of waiting for the next poll. Polling continues as a backup, four times less often while the stream is connected. The stream and polling only run while a Knot view is visible (or a bucket is in use in the workspace), and showing a view catches up.
+- **Python IntelliSense**: `knot.template` custom field docs cover `show_on_create` and field order.
 
 ## 0.2.5
 

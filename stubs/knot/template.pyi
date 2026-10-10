@@ -29,7 +29,10 @@ def create(name: str, job: str = ..., description: str = ..., platform: str = ..
     language (the editor language, textarea only), default — a bool default
     becomes the string "true"/"false"; values are stored as strings — and
     required (bool): a required field cannot be blank when creating or editing
-    a space, and the default can satisfy the requirement.
+    a space, and the default can satisfy the requirement — and show_on_create
+    (bool): an optional field shown on the create-space form without opening
+    its optional fields toggle. The list order is the order the form shows
+    the fields in.
     """
     ...
 def update(template_id: str, name: str | None = ..., job: str | None = ..., description: str | None = ..., platform: str | None = ..., custom_fields: builtins.list[dict[str, Any]] | None = ..., **kwargs: Any) -> bool:

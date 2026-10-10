@@ -9,6 +9,12 @@ export interface CustomFieldValue {
 export interface CustomFieldDef {
     name: string;
     description: string;
+    type?: string;
+    default?: string;
+    required?: boolean;
+    options?: string[];
+    /** An optional field asked for on create without opting in to the rest. */
+    show_on_create?: boolean;
 }
 
 export interface AltNameEntry {

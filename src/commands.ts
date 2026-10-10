@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { spawn, spawnSync } from 'child_process';
-import type { CustomFieldValue, PortForwardRequest, SpaceRequest, StackDefinitionInfo, StackDefSpace, Template } from './api/types';
+import type { CustomFieldDef, CustomFieldValue, PortForwardRequest, SpaceRequest, StackDefinitionInfo, StackDefSpace, Template } from './api/types';
 import { describeError, defaultInsecure } from './session';
 import type { ConnectedServer, ServerConfig, ServerStore } from './serverStore';
 import { serverLabel } from './serverStore';
@@ -534,20 +534,59 @@ async function cmdCreateSpace(ctx: CommandContext, serverId?: string): Promise<v
     }
     const description = await vscode.window.showInputBox({ prompt: 'Description (optional)', ignoreFocusOut: true });
 
-    // Prompt for any custom fields defined by the template.
+    // Prompt for the template's custom fields like the web form: required
+    // fields and the optional ones the template marks to show, then the
+    // other optional fields only if asked for. Defaults are prefilled.
+    const defs = template.template.custom_fields ?? [];
+    const pinned = (cf: CustomFieldDef) => !!(cf.required || cf.show_on_create);
+    const others = defs.filter((cf) => !pinned(cf));
+    let askOthers = false;
+    if (others.length) {
+        const names = others.map((cf) => cf.description || cf.name).join(', ');
+        const pick = await vscode.window.showQuickPick(
+            [
+                { label: 'No', description: 'Leave them at their defaults' },
+                { label: 'Yes', description: names },
+            ],
+            { placeHolder: `Set ${others.length} optional field${others.length === 1 ? '' : 's'}? (${names})`, ignoreFocusOut: true },
+        );
+        if (!pick) {
+            return; // user cancelled
+        }
+        askOthers = pick.label === 'Yes';
+    }
     const customFields: CustomFieldValue[] = [];
-    for (const cf of template.template.custom_fields ?? []) {
-        const value = await vscode.window.showInputBox({
-            prompt: cf.description || `Custom field: ${cf.name}`,
-            placeHolder: cf.name,
-            ignoreFocusOut: true,
-        });
+    for (const cf of defs) {
+        if (!pinned(cf) && !askOthers) {
+            continue; // omitted: the server applies the template default
+        }
+        let value: string | undefined;
+        if (cf.type === 'bool') {
+            const pick = await vscode.window.showQuickPick(['true', 'false'], {
+                placeHolder: (cf.description || cf.name) + (cf.required ? ' (required)' : ''),
+                ignoreFocusOut: true,
+            });
+            value = pick;
+        } else if (cf.type === 'select' && cf.options?.length) {
+            value = await vscode.window.showQuickPick(cf.options, {
+                placeHolder: (cf.description || cf.name) + (cf.required ? ' (required)' : ''),
+                ignoreFocusOut: true,
+            });
+        } else {
+            value = await vscode.window.showInputBox({
+                prompt: (cf.description || `Custom field: ${cf.name}`) + (cf.required ? ' (required)' : ''),
+                placeHolder: cf.name,
+                value: cf.default ?? '',
+                password: cf.type === 'masked',
+                ignoreFocusOut: true,
+                validateInput: (v) => (cf.required && !v.trim() ? 'This field is required' : undefined),
+            });
+        }
         if (value === undefined) {
             return; // user cancelled
         }
-        if (value.trim()) {
-            customFields.push({ name: cf.name, value });
-        }
+        // An asked-for field is always sent, so clearing a default sticks.
+        customFields.push({ name: cf.name, value });
     }
 
     const req: SpaceRequest = {
