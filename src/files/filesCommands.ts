@@ -63,6 +63,10 @@ export function registerFilesCommands(store: ServerStore, tree: FilesTreeProvide
     const refresh = () => {
         fs.refresh();
         tree.refresh();
+        // Editors and the Explorer follow what changed on the server.
+        for (const s of store.list()) {
+            void fs.sync(s.id);
+        }
     };
 
     return [

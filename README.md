@@ -15,8 +15,8 @@ Manage [Knot](https://getknot.dev) cloud development environments directly from 
 - **Open in VSCode** — open a running, SSH-enabled space in a new VSCode window via Remote-SSH (the extension wires up `~/.ssh/config` and uses the `knot` CLI as the SSH proxy).
 - **Open code-server** or the space's web page in your browser.
 - **Web ports** — running spaces that expose HTTP ports expand to show each dev URL (including alt-name aliases); click one to open it in your browser.
-- **File storage** — browse a server's file storage buckets in a **Files** view, open files, and add a bucket or folder to the workspace to edit it in place; rename and delete work too. Needs file storage enabled on the server (knot 0.37.0 or later); servers without it are left out of the view.
-- **Auto-refresh** — polls for status changes **only while the Knot view is visible**, with a short burst-poll right after lifecycle actions.
+- **File storage** — browse a server's file storage buckets in a **Files** view, open files, and add a bucket or folder to the workspace to edit it in place; rename and delete work too. Files added, changed or deleted elsewhere (the web interface, `knot file`, S3) show up in the view and the Explorer straight away, and open editors reload. Needs file storage enabled on the server (knot 0.37.0 or later); servers without it are left out of the view.
+- **Live updates** — while a Knot view is visible, the extension follows each server's event stream, so space, pool and file changes appear as they happen. Polling backs it up: every `knot.refreshInterval` seconds while a server's stream is down, and four times less often while it is open. With both views hidden nothing is streamed or polled (unless a bucket is in the workspace or one of its files is open), and showing a view catches up; **Refresh** reloads on demand.
 
 ## Getting started
 
@@ -70,8 +70,8 @@ These are also available on a server node's context menu (right-click).
 
 | Setting                   | Default  | Description                                                                             |
 | ------------------------- | -------- | --------------------------------------------------------------------------------------- |
-| `knot.autoRefresh`        | `true`   | Poll for status changes                                                                 |
-| `knot.refreshInterval`    | `15`     | Polling interval in seconds                                                             |
+| `knot.autoRefresh`        | `true`   | Poll for changes, as a backup to the server's live updates                              |
+| `knot.refreshInterval`    | `15`     | Polling interval in seconds (four times longer while live updates are connected)        |
 | `knot.terminalShell`      | `"bash"` | Default shell for new terminals                                                         |
 | `knot.insecureSkipVerify` | `false`  | Default _skip TLS verification_ option when adding a server (each server keeps its own) |
 | `knot.serverUrl`          | `""`     | Legacy single-server URL, used only to migrate to the multi-server list                 |

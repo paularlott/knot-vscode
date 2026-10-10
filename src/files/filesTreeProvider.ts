@@ -74,8 +74,17 @@ export class FilesTreeProvider implements vscode.TreeDataProvider<FilesNode>, vs
         private readonly ensureConnected: (id: string) => Promise<ConnectedServer | undefined>,
     ) {}
 
+    private refreshTimer: NodeJS.Timeout | undefined;
+
+    /** Lists the view again; refreshes asked for together are made once. */
     refresh(): void {
-        this.emitter.fire(undefined);
+        if (this.refreshTimer) {
+            return;
+        }
+        this.refreshTimer = setTimeout(() => {
+            this.refreshTimer = undefined;
+            this.emitter.fire(undefined);
+        }, 100);
     }
 
     getTreeItem(node: FilesNode): vscode.TreeItem {

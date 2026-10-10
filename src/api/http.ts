@@ -1,7 +1,10 @@
 import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';
+import * as zlib from 'zlib';
 import type { ApiError } from './types';
+import { EventStream } from './events';
+import type { KnotEvent } from './events';
 
 export class KnotHttpError extends Error {
     constructor(
@@ -55,6 +58,8 @@ export class HttpClient {
                 path: url.pathname + url.search,
                 headers: {
                     Accept: 'application/json',
+                    // Listings and change feeds are large and compress well.
+                    'Accept-Encoding': 'gzip',
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${this.token}`,
                 },
@@ -68,7 +73,16 @@ export class HttpClient {
                 const chunks: Buffer[] = [];
                 res.on('data', (c: Buffer) => chunks.push(c));
                 res.on('end', () => {
-                    const text = Buffer.concat(chunks).toString('utf8');
+                    let raw = Buffer.concat(chunks);
+                    if (String(res.headers['content-encoding'] ?? '').toLowerCase() === 'gzip') {
+                        try {
+                            raw = zlib.gunzipSync(raw);
+                        } catch (err) {
+                            reject(err);
+                            return;
+                        }
+                    }
+                    const text = raw.toString('utf8');
                     if (opts.expectStatus !== undefined && res.statusCode !== opts.expectStatus) {
                         const msg = extractError(text) || res.statusMessage || 'request failed';
                         reject(new KnotHttpError(res.statusCode ?? 0, res.statusMessage ?? '', msg, opts.path));
@@ -168,6 +182,11 @@ export class HttpClient {
 
     delete<T>(path: string): Promise<T> {
         return this.request<T>({ method: 'DELETE', path });
+    }
+
+    /** The server's event stream; it does nothing until started. */
+    events(handlers: { onEvent: (event: KnotEvent) => void; onState: (connected: boolean) => void }): EventStream {
+        return new EventStream(this.baseURL, this.token, this.agent, handlers);
     }
 
     dispose(): void {

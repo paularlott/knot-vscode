@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { randomUUID } from 'crypto';
 import { KnotClient } from './api/client';
 import type { UserResponse } from './api/types';
+import type { EventStream, KnotEvent } from './api/events';
 
 /** A configured Knot server, including its secret token. */
 export interface ServerConfig {
@@ -23,6 +24,8 @@ export interface ConnectedServer {
     wildcardDomain: string;
     /** Whether file storage is enabled on the server; undefined on servers too old to say. */
     filesEnabled?: boolean;
+    /** The server's event stream, open while connected. */
+    events: EventStream;
 }
 
 const STORAGE_KEY = 'knot.servers';
@@ -41,6 +44,12 @@ export class ServerStore implements vscode.Disposable {
     private connections = new Map<string, ConnectedServer>();
     private readonly _onDidChange = new vscode.EventEmitter<void>();
     readonly onDidChange = this._onDidChange.event;
+    private readonly _onEvent = new vscode.EventEmitter<{ serverId: string; event: KnotEvent }>();
+    /** A message from a connected server's event stream. */
+    readonly onEvent = this._onEvent.event;
+    private readonly _onStreamState = new vscode.EventEmitter<{ serverId: string; connected: boolean }>();
+    /** A server's event stream opened or closed. */
+    readonly onStreamState = this._onStreamState.event;
 
     constructor(private readonly secrets: vscode.SecretStorage) {}
 
@@ -120,6 +129,21 @@ export class ServerStore implements vscode.Disposable {
 
     // ---- connections ----
 
+    /** Opens or closes a connected server's event stream. */
+    setStreaming(id: string, on: boolean): void {
+        const events = this.connections.get(id)?.events;
+        if (on) {
+            events?.start();
+        } else {
+            events?.stop();
+        }
+    }
+
+    /** Whether the server's event stream is open, so its changes arrive as they happen. */
+    isLive(id: string): boolean {
+        return this.connections.get(id)?.events.connected ?? false;
+    }
+
     /** Create and validate a client for the server, caching it. Throws on auth failure. */
     async connect(id: string): Promise<ConnectedServer> {
         const existing = this.connections.get(id);
@@ -149,7 +173,11 @@ export class ServerStore implements vscode.Disposable {
             } catch {
                 // ignore — features degrade gracefully
             }
-            const connected: ConnectedServer = { config, client, user, version, wildcardDomain, filesEnabled };
+            const events = client.http.events({
+                onEvent: (event) => this._onEvent.fire({ serverId: id, event }),
+                onState: (connected) => this._onStreamState.fire({ serverId: id, connected }),
+            });
+            const connected: ConnectedServer = { config, client, user, version, wildcardDomain, filesEnabled, events };
             this.connections.set(id, connected);
             return connected;
         } catch (err) {
@@ -161,8 +189,9 @@ export class ServerStore implements vscode.Disposable {
     async disconnect(id: string): Promise<void> {
         const conn = this.connections.get(id);
         if (conn) {
-            conn.client.dispose();
             this.connections.delete(id);
+            conn.events.stop();
+            conn.client.dispose();
         }
     }
 
@@ -172,9 +201,12 @@ export class ServerStore implements vscode.Disposable {
 
     dispose(): void {
         for (const conn of this.connections.values()) {
+            conn.events.stop();
             conn.client.dispose();
         }
         this.connections.clear();
         this._onDidChange.dispose();
+        this._onEvent.dispose();
+        this._onStreamState.dispose();
     }
 }

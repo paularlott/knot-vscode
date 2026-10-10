@@ -28,6 +28,9 @@ def usage() -> dict[str, Any]:
 def list_files(bucket: str, prefix: str = ..., recursive: bool = ...) -> dict[str, Any]:
     """List the files in a bucket. Returns files (key, size, etag, sha256, content_type, modified_at) and folders (prefixes ending in /). prefix restricts to keys starting with it, so end it with / for a folder; recursive=True lists every file below the prefix and returns no folders"""
     ...
+def list_changes(bucket: str, prefix: str = ..., cursor: str = ...) -> dict[str, Any]:
+    """List what changed in a bucket since a cursor, to follow it without listing it again. Without a cursor every file is returned; cursor="now" returns none, only a cursor to follow from now; with a cursor, each file changed since, once, as it is now (deleted=True for one that was deleted). Returns changes (key, size, etag, sha256, content_type, modified_at, deleted), cursor (pass it next time) and reset (True when the cursor could not be followed: start again without one)"""
+    ...
 def read_file(bucket: str, key: str) -> bytes:
     """Read a file's content as bytes (at most 64 MB in a script)"""
     ...
@@ -37,8 +40,8 @@ def read_text(bucket: str, key: str) -> str:
 def write_file(bucket: str, key: str, data: str | bytes, content_type: str = ...) -> dict[str, Any]:
     """Write a file, replacing any file with that key; folders need no creating. data is a string (written as UTF-8) or bytes, at most 64 MB at a time. content_type defaults to text/plain for a string, else application/octet-stream. Returns the file's key, size, etag, sha256, content_type and modified_at"""
     ...
-def delete_file(bucket: str, key: str) -> bool:
-    """Delete a file"""
+def delete_file(bucket: str, key: str, if_match: str = ...) -> bool:
+    """Delete a file. With if_match (an etag from list_files, list_changes, write_file or copy_file), only if it is still that version: a file changed since is left alone and an exception raised (HTTP 412)"""
     ...
 def copy_file(source_bucket: str, source_key: str, dest_bucket: str, dest_key: str) -> dict[str, Any]:
     """Copy a file within a bucket or to another, on the server without transferring its content; keeps its content type, metadata and modification time and replaces any file at the destination"""

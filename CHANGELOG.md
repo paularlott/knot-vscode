@@ -6,7 +6,9 @@
   - A new **Files** view lists each server that has file storage, its buckets (including ones shared with you), and their folders and files. Click a file to open it; **Add to Workspace** on a bucket or folder opens it in the Explorer, where files are edited and saved in place (`knotfs://`).
   - Rename and delete work on files and on whole folders, and renaming happens on the server without moving any content. Buckets shared read-only open read-only.
   - A save is refused, with a message, if the file changed on the server in the meantime.
+  - Changes made elsewhere (the web interface, `knot file`, S3) appear in the Files view and the Explorer as they happen, and open editors reload, via the server's event stream; polling backs it up and **Refresh** looks again on demand.
   - Servers without file storage are left out of the view, and the server's API token needs the `files` scope or full access.
+- **Live Spaces view**: space and pool changes now arrive over the server's event stream instead of waiting for the next poll. Polling continues as a backup, four times less often while the stream is connected. The stream and polling only run while a Knot view is visible (or a bucket is in use in the workspace), and showing a view catches up.
 
 ## 0.2.5
 

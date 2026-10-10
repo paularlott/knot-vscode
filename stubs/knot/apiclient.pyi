@@ -15,8 +15,8 @@ def post(path: str, body: dict[str, Any] | None = ..., expect: int = ...) -> dic
 def put(path: str, body: dict[str, Any] | None = ..., expect: int = ...) -> dict[str, Any]:
     """PUT request to the Knot API. body is a dict"""
     ...
-def delete(path: str, expect: int = ...) -> dict[str, Any]:
-    """DELETE request to the Knot API"""
+def delete(path: str, headers: dict[str, str] | None = ...) -> dict[str, Any]:
+    """DELETE request to the Knot API, with any extra request headers (such as If-Match)"""
     ...
 def get_bytes(path: str) -> bytes:
     """GET request to the Knot API returning the response body as bytes (file content)"""

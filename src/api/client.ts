@@ -2,6 +2,7 @@ import { HttpClient } from './http';
 import type {
     CreateSpaceResponse,
     FileBucketList,
+    FileChangeList,
     FileObjectList,
     PortApplyRequest,
     PoolList,
@@ -195,6 +196,15 @@ export class KnotClient {
         return this.http.get<FileObjectList>(`/api/files/list/${encodeURIComponent(bucket)}?${qs}`);
     }
 
+    /**
+     * A page of what changed in a bucket since cursor. The cursor "now"
+     * returns no changes, only a cursor to follow the bucket from now on.
+     */
+    listFileChanges(bucket: string, cursor: string, prefix = ''): Promise<FileChangeList> {
+        const qs = `cursor=${encodeURIComponent(cursor)}&prefix=${encodeURIComponent(prefix)}&limit=1000`;
+        return this.http.get<FileChangeList>(`/api/files/changes/${encodeURIComponent(bucket)}?${qs}`);
+    }
+
     private fileUrl(bucket: string, key: string): string {
         const k = key.split('/').map(encodeURIComponent).join('/');
         return `/api/files/objects/${encodeURIComponent(bucket)}/${k}`;
@@ -214,21 +224,23 @@ export class KnotClient {
         };
     }
 
-    async readFileContent(bucket: string, key: string): Promise<Buffer> {
+    /** A file's content and the ETag of the version read. */
+    async readFileContent(bucket: string, key: string): Promise<{ body: Buffer; etag: string }> {
         const res = await this.http.requestRaw({ method: 'GET', path: this.fileUrl(bucket, key) });
-        return res.body;
+        return { body: res.body, etag: String(res.headers['etag'] ?? '').replace(/"/g, '') };
     }
 
     /**
      * Writes a file. With `ifMatch` the write only replaces the version with that
-     * ETag; with `ifAbsent` it only creates. Either refusal is a 412.
+     * ETag; with `ifAbsent` it only creates. Either refusal is a 412. Returns
+     * the new version's ETag.
      */
     async writeFileContent(
         bucket: string,
         key: string,
         data: Buffer,
         opts: { ifMatch?: string; ifAbsent?: boolean } = {},
-    ): Promise<void> {
+    ): Promise<string> {
         const headers: Record<string, string> = { 'Content-Type': 'application/octet-stream' };
         if (opts.ifMatch) {
             headers['If-Match'] = `"${opts.ifMatch}"`;
@@ -236,7 +248,12 @@ export class KnotClient {
         if (opts.ifAbsent) {
             headers['If-None-Match'] = '*';
         }
-        await this.http.requestRaw({ method: 'PUT', path: this.fileUrl(bucket, key), body: data, headers });
+        const res = await this.http.requestRaw({ method: 'PUT', path: this.fileUrl(bucket, key), body: data, headers });
+        try {
+            return String((JSON.parse(res.body.toString('utf8')) as { etag?: string }).etag ?? '');
+        } catch {
+            return '';
+        }
     }
 
     async deleteFileObject(bucket: string, key: string): Promise<void> {

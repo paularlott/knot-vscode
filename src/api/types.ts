@@ -303,6 +303,8 @@ export interface PoolList {
 // ---- File storage ----
 
 export interface FileBucketInfo {
+    /** Fixed for the life of the bucket, whatever its name; change events name buckets by it. */
+    id: string;
     /** Full name, "<owner>--<name>": what the file endpoints take. */
     name: string;
     /** The short name for the caller's own buckets, else the full name. */
@@ -323,6 +325,22 @@ export interface FileObjectInfo {
     size: number;
     etag: string;
     modified_at: string;
+}
+
+export interface FileChange extends FileObjectInfo {
+    /** Set for a file that was deleted, which carries only key and modified_at. */
+    deleted?: boolean;
+}
+
+/** A page of a bucket's change feed. */
+export interface FileChangeList {
+    changes: FileChange[];
+    /** Continues the feed after these changes. */
+    cursor: string;
+    /** More changes are waiting: ask again at once. */
+    more: boolean;
+    /** The cursor can no longer be followed: start again without one. */
+    reset: boolean;
 }
 
 export interface FileObjectList {
