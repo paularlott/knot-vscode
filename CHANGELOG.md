@@ -2,7 +2,8 @@
 
 ## 0.3.1
 
-- **Pool leases**: `knot.pool.create` and `update` stubs take `lease_max_time` and `lease_max_extensions`, so scripts can make lease-enabled pools. Requires knot 0.37.1 or later.
+- **Pool leases**: `knot.pool.create` and `update` stubs take `lease_max_time` and `lease_max_extensions`, so scripts can make lease-enabled pools. Requires knot 0.38.0 or later.
+- **Pool custom fields**: `knot.pool.create` and `update` stubs take `custom_fields`, the values given to every pool member. Requires knot 0.38.0 or later.
 
 ## 0.3.0
 

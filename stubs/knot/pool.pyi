@@ -11,15 +11,19 @@ def list() -> builtins.list[dict[str, Any]]:
 def get(name: str) -> dict[str, Any]:
     """Get pool details, utilization, and member stats by name or ID"""
     ...
-def create(name: str, template_name: str, startup_script_id: str = ..., desired_count: int = ..., active: bool = ..., lease_max_time: int = ..., lease_max_extensions: int = ...) -> str:
+def create(name: str, template_name: str, startup_script_id: str = ..., desired_count: int = ..., active: bool = ..., lease_max_time: int = ..., lease_max_extensions: int = ..., custom_fields: list[dict[str, str]] | None = ...) -> str:
     """Create a pool with the given number of spaces and return its ID.
 
     lease_max_time enables exclusive member leases: 0 = off (default), -1 = no timeout,
     >0 = maximum lease length in seconds. lease_max_extensions: 0 = extending forbidden
-    (default), -1 = unlimited, >0 = maximum extensions."""
+    (default), -1 = unlimited, >0 = maximum extensions. custom_fields: values given to
+    every member, as {"name": ..., "value": ...}; fields left out get the template default."""
     ...
-def update(name: str, desired_count: int | None = ..., active: bool | None = ..., lease_max_time: int | None = ..., lease_max_extensions: int | None = ...) -> bool:
-    """Update pool desired count, active state or lease settings; omitted values are kept. Name, template, and startup script are immutable."""
+def update(name: str, desired_count: int | None = ..., active: bool | None = ..., lease_max_time: int | None = ..., lease_max_extensions: int | None = ..., custom_fields: list[dict[str, str]] | None = ...) -> bool:
+    """Update pool desired count, active state, lease settings or custom fields; omitted values are kept.
+
+    custom_fields replaces the values given to members ([] clears them); members pick them up
+    when next created or started. Name, template, and startup script are immutable."""
     ...
 def delete(name: str) -> bool:
     """Delete a stopped pool and all its spaces"""
