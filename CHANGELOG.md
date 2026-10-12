@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.3.1
+
+- **Pool leases**: `knot.pool.create` and `update` stubs take `lease_max_time` and `lease_max_extensions`, so scripts can make lease-enabled pools. Requires knot 0.37.1 or later.
+
 ## 0.3.0
 
 - **File storage**: browse, read, edit, rename and delete the files in your Knot [file storage](https://getknot.dev/docs/file-storage/) buckets from VS Code. Requires knot 0.37.0 or later with file storage enabled.

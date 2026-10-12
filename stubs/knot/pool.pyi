@@ -11,11 +11,15 @@ def list() -> builtins.list[dict[str, Any]]:
 def get(name: str) -> dict[str, Any]:
     """Get pool details, utilization, and member stats by name or ID"""
     ...
-def create(name: str, template_name: str, startup_script_id: str = ..., desired_count: int = ..., active: bool = ...) -> str:
-    """Create a pool with the given number of spaces"""
+def create(name: str, template_name: str, startup_script_id: str = ..., desired_count: int = ..., active: bool = ..., lease_max_time: int = ..., lease_max_extensions: int = ...) -> str:
+    """Create a pool with the given number of spaces and return its ID.
+
+    lease_max_time enables exclusive member leases: 0 = off (default), -1 = no timeout,
+    >0 = maximum lease length in seconds. lease_max_extensions: 0 = extending forbidden
+    (default), -1 = unlimited, >0 = maximum extensions."""
     ...
-def update(name: str, desired_count: int | None = ..., active: bool | None = ...) -> bool:
-    """Update pool desired count or active state. Name, template, and startup script are immutable."""
+def update(name: str, desired_count: int | None = ..., active: bool | None = ..., lease_max_time: int | None = ..., lease_max_extensions: int | None = ...) -> bool:
+    """Update pool desired count, active state or lease settings; omitted values are kept. Name, template, and startup script are immutable."""
     ...
 def delete(name: str) -> bool:
     """Delete a stopped pool and all its spaces"""
