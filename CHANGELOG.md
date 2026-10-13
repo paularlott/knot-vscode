@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.3.2
+
+- **Personal secrets**: new `knot.secret` stub with `get(path, field)`, which reads the space owner's own 1Password secrets inside a space. Requires knot Pro 0.39.0 or later.
+- **Template feature switches**: `knot.template.create` and `update` stubs name `disable_file_storage`, `disable_user_secrets` and `disable_user_activity`, so they're offered as completions. `disable_file_storage` requires knot 0.39.0 or later; `disable_user_secrets` and `disable_user_activity` are Knot Pro.
+
 ## 0.3.1
 
 - **Pool leases**: `knot.pool.create` and `update` stubs take `lease_max_time` and `lease_max_extensions`, so scripts can make lease-enabled pools. Requires knot 0.38.0 or later.
