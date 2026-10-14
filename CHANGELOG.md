@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.3.4
+
+- **Remove shorthand 1Password paths**: removed unsupported shorthand 1Password paths in the `knot.secret`.
+
 ## 0.3.3
 
 - **Correct function signatures**: fixed incorrect function signatures in the `knot.secret`.
