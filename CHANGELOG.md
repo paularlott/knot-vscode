@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.3.3
+
+- **Correct function signatures**: fixed incorrect function signatures in the `knot.secret`.
+
 ## 0.3.2
 
 - **Personal secrets**: new `knot.secret` stub with `get(path, field)`, which reads the space owner's own 1Password secrets inside a space. Requires knot Pro 0.39.0 or later.
