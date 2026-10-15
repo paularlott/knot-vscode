@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.3.5
+
+- **Space restrictions**: new `knot.space.restrict`, `restrictions` and `clear_restrictions` stubs. Requires knot 0.40.0 or later; `secrets_allow` and `secrets_deny` require Knot Pro 0.41.0 or later.
+- **Personal secrets**: `knot.secret.get` takes only a full `op://` reference; the `field` argument is gone. Requires knot Pro 0.41.0 or later.
+
 ## 0.3.4
 
 - **Remove shorthand 1Password paths**: removed unsupported shorthand 1Password paths in the `knot.secret`.

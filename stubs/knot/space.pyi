@@ -100,6 +100,23 @@ def get_field(name: str, field: str) -> str:
 def set_field(name: str, field: str, value: str) -> bool:
     """Set custom field value on space"""
     ...
+def restrict(
+    name: str | None = ...,
+    buckets: builtins.list[str] | None = ...,
+    files: str = ...,
+    no_secrets: bool = ...,
+    lock: bool = ...,
+    secrets_allow: builtins.list[str] | None = ...,
+    secrets_deny: builtins.list[str] | None = ...,
+) -> dict[str, Any]:
+    """Restrict what a space can reach, default the space this runs in; restrictions only tighten from inside it. buckets keeps only "name" or "name:ro"; files is "ro" or "none"; lock locks its processes out of everything but files and secrets; secrets_allow and secrets_deny take prefixes such as "op://vault/" (Knot Pro)"""
+    ...
+def restrictions(name: str | None = ...) -> dict[str, Any]:
+    """Get a space's restrictions, including what its template switches off, default the space this runs in"""
+    ...
+def clear_restrictions(name: str) -> dict[str, Any]:
+    """Lift every restriction on a space; refused from inside the space"""
+    ...
 def transfer(name: str, user_id: str) -> bool:
     """Transfer space to another user (user_id can be username, email, or UUID)"""
     ...
