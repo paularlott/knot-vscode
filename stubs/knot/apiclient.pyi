@@ -6,13 +6,13 @@ def configure(url: str, token: str, insecure: bool = ..., ai_url: str = ..., ai_
 def is_configured() -> bool:
     """Check if the client has been configured (explicitly or via env vars)"""
     ...
-def get(path: str) -> dict[str, Any]:
+def get(path: str, params: dict[str, Any] | None = ...) -> dict[str, Any]:
     """GET request to the Knot API. params is an optional dict of query parameters"""
     ...
-def post(path: str, body: dict[str, Any] | None = ..., expect: int = ...) -> dict[str, Any]:
+def post(path: str, body: dict[str, Any] | None = ...) -> dict[str, Any]:
     """POST request to the Knot API. body is a dict"""
     ...
-def put(path: str, body: dict[str, Any] | None = ..., expect: int = ...) -> dict[str, Any]:
+def put(path: str, body: dict[str, Any] | None = ...) -> dict[str, Any]:
     """PUT request to the Knot API. body is a dict"""
     ...
 def delete(path: str, headers: dict[str, str] | None = ...) -> dict[str, Any]:

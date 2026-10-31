@@ -100,6 +100,23 @@ def get_field(name: str, field: str) -> str:
 def set_field(name: str, field: str, value: str) -> bool:
     """Set custom field value on space"""
     ...
+def restrict(
+    name: str | None = ...,
+    buckets: builtins.list[str] | None = ...,
+    files: str = ...,
+    no_secrets: bool = ...,
+    lock: bool = ...,
+    secrets_allow: builtins.list[str] | None = ...,
+    secrets_deny: builtins.list[str] | None = ...,
+) -> dict[str, Any]:
+    """Restrict what a space's own credential can do; from inside a space restrictions only tighten. name defaults to the space this runs in. buckets keeps only the named buckets, each "name" or "name:ro"; files is "ro", "none" or ""; no_secrets switches personal secrets off and secrets_allow / secrets_deny limit them by prefix such as "op://vault/" (Knot Pro); lock locks the space's processes out of everything but file storage and personal secrets. Returns the restrictions, as restrictions() does."""
+    ...
+def restrictions(name: str | None = ...) -> dict[str, Any]:
+    """Get a space's restrictions (name defaults to the space this runs in): restricted, no_secrets, locked, files, limit_buckets, buckets ({name, read_only}), limit_secrets, secrets_allow, secrets_deny, template_no_files and template_no_secrets."""
+    ...
+def clear_restrictions(name: str) -> dict[str, Any]:
+    """Lift all of a space's restrictions. Refused from inside a space."""
+    ...
 def transfer(name: str, user_id: str) -> bool:
     """Transfer space to another user (user_id can be username, email, or UUID)"""
     ...

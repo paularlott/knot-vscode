@@ -19,8 +19,8 @@ def delete_def(name: str) -> bool:
 def validate_def(spaces: builtins.list[dict[str, Any]], name: str = ..., description: str = ..., icon_url: str = ..., scope: str = ..., active: bool = ..., groups: builtins.list[str] | None = ..., zones: builtins.list[str] | None = ...) -> dict[str, Any]:
     """Validate a stack definition without saving"""
     ...
-def add_component(stack_definition: dict[str, Any], template: str, name: str, description: str = ..., shell: str = ..., **kwargs: Any) -> dict[str, Any]:
-    """Add a component (template binding) to an existing stack definition. Resolves template name to ID and rejects duplicate component names."""
+def add_component(stack_definition: dict[str, Any], template: str, name: str, description: str = ..., shell: str = ..., startup_script: str = ..., depends_on: builtins.list[str] | None = ...) -> bool:
+    """Add a component (template binding) to an existing stack definition. Resolves template name to ID and rejects duplicate component names. startup_script is a startup script ID; depends_on lists other component names this one depends on."""
     ...
 def remove_component(stack_definition: dict[str, Any], name: str) -> dict[str, Any]:
     """Remove a component from a stack definition by name. Also cleans up depends_on and port_forward references in sibling components."""

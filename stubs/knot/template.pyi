@@ -35,7 +35,7 @@ def create(name: str, job: str = ..., description: str = ..., platform: str = ..
     the fields in.
     """
     ...
-def update(template_id: str, name: str | None = ..., job: str | None = ..., description: str | None = ..., platform: str | None = ..., custom_fields: builtins.list[dict[str, Any]] | None = ..., disable_user_activity: bool | None = ..., disable_file_storage: bool | None = ..., disable_user_secrets: bool | None = ..., **kwargs: Any) -> bool:
+def update(template_id: str, name: str | None = ..., job: str | None = ..., description: str | None = ..., platform: str | None = ..., volumes: str | None = ..., active: bool | None = ..., custom_fields: builtins.list[dict[str, Any]] | None = ..., disable_user_activity: bool | None = ..., disable_file_storage: bool | None = ..., disable_user_secrets: bool | None = ..., **kwargs: Any) -> bool:
     """Update template properties, including health_check_type, health_check_auto_restart, max_uptime, idle_timeout, ports, jobs and port_forwards. Omitted properties are left unchanged. disable_file_storage and disable_user_secrets switch file storage and personal secrets (Knot Pro) off for the template's spaces; disable_user_activity stops user activity collection (Knot Pro). max_uptime / idle_timeout units are one of "minute", "hour", "day"; "disabled" (or a 0 value for idle) turns the stop off. custom_fields, when given, replaces the template's custom fields (same shape as create); omitted leaves them unchanged."""
     ...
 def delete(template_id: str) -> bool:

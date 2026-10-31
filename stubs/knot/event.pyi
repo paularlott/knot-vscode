@@ -6,7 +6,7 @@ Server-side (sink scripts): get_*() accessors and metadata functions.
 from typing import Any
 
 # Space-side: emit a custom event (available in any in-space script)
-def emit(type: str, payload: dict[str, Any] | None = ...) -> bool:
+def emit(event_type: str, payload: dict[str, Any] | None = ...) -> bool:
     """Emit a custom event from this space. The 'custom.' prefix is added automatically."""
     ...
 
