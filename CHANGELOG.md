@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.3.6
+
+- **Method scope from groups**: the `knot.methods` `Server.method` stub defaults `scope` to `""`: a method that lists `groups` is shared, otherwise private, and `scope="private"` with `groups` fails registration. Requires knot 0.42.0 or later.
+- **Request timeouts**: the `knot.apiclient` `get`, `post`, `put`, `delete`, `get_bytes` and `put_bytes` stubs take an optional `timeout`, in seconds, for calls that may take longer than usual. Requires knot 0.42.0 or later.
+
 ## 0.3.5
 
 - **Space restrictions**: new `knot.space.restrict`, `restrictions` and `clear_restrictions` stubs. Requires knot 0.40.0 or later; `secrets_allow` and `secrets_deny` require Knot Pro 0.41.0 or later.

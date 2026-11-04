@@ -22,7 +22,7 @@ class Server:
         *,
         local_name: str = "",
         description: str = "",
-        scope: str = "private",
+        scope: str = "",
         keywords: list[str] | None = None,
         groups: list[str] | None = None,
         mcp_tool: bool = False,
