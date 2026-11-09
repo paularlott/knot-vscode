@@ -1,6 +1,7 @@
-"""Store, read and copy files in buckets replicated across the cluster, and manage the buckets."""
+"""Store, read, copy and move files in buckets replicated across the cluster, snapshot folders, and manage the buckets. In a space, knot.files.sync runs sync projects."""
 import builtins
 from typing import Any
+from . import sync as sync
 def list_buckets(all: bool = ...) -> builtins.list[dict[str, Any]]:
     """List the buckets you own or that are shared with you; all=True lists every bucket (file storage managers). Each has name (<owner>--<name>), display_name, owner, owner_id, access (owner, write or read), size, count, shared (type, name and access of each share) and created_at"""
     ...
@@ -26,10 +27,10 @@ def usage() -> dict[str, Any]:
     """Your file storage usage and limits: used_bytes, files, buckets, quota_bytes and max_buckets (0 for no limit)"""
     ...
 def list_files(bucket: str, prefix: str = ..., recursive: bool = ...) -> dict[str, Any]:
-    """List the files in a bucket. Returns files (key, size, etag, sha256, content_type, modified_at) and folders (prefixes ending in /). prefix restricts to keys starting with it, so end it with / for a folder; recursive=True lists every file below the prefix and returns no folders"""
+    """List the files in a bucket. Returns files (as stat gives for a file) and folders (prefixes ending in /). prefix restricts to keys starting with it, so end it with / for a folder; recursive=True lists every file below the prefix and returns no folders"""
     ...
 def list_changes(bucket: str, prefix: str = ..., cursor: str = ...) -> dict[str, Any]:
-    """List what changed in a bucket since a cursor, to follow it without listing it again. Without a cursor every file is returned; cursor="now" returns none, only a cursor to follow from now; with a cursor, each file changed since, once, as it is now (deleted=True for one that was deleted). Returns changes (key, size, etag, sha256, content_type, modified_at, deleted), cursor (pass it next time) and reset (True when the cursor could not be followed: start again without one)"""
+    """List what changed in a bucket since a cursor, to follow it without listing it again. Without a cursor every file is returned; cursor="now" returns none, only a cursor to follow from now; with a cursor, each file changed since, once, as it is now (deleted=True for one that was deleted). Returns changes (as stat gives for a file, with deleted), cursor (pass it next time) and reset (True when the cursor could not be followed: start again without one)"""
     ...
 def read_file(bucket: str, key: str) -> bytes:
     """Read a file's content as bytes (at most 64 MB in a script)"""
@@ -38,7 +39,7 @@ def read_text(bucket: str, key: str) -> str:
     """Read a file's content as UTF-8 text"""
     ...
 def write_file(bucket: str, key: str, data: str | bytes, content_type: str = ...) -> dict[str, Any]:
-    """Write a file, replacing any file with that key; folders need no creating. data is a string (written as UTF-8) or bytes, at most 64 MB at a time. content_type defaults to text/plain for a string, else application/octet-stream. Returns the file's key, size, etag, sha256, content_type and modified_at"""
+    """Write a file, replacing any file with that key; folders need no creating. data is a string (written as UTF-8) or bytes, at most 64 MB at a time. content_type defaults to text/plain for a string, else application/octet-stream. Returns the file, as stat gives it"""
     ...
 def delete_file(bucket: str, key: str, if_match: str = ...) -> bool:
     """Delete a file. With if_match (an etag from list_files, list_changes, write_file or copy_file), only if it is still that version: a file changed since is left alone and an exception raised (HTTP 412)"""
@@ -48,4 +49,16 @@ def copy_file(source_bucket: str, source_key: str, dest_bucket: str, dest_key: s
     ...
 def file_exists(bucket: str, key: str) -> bool:
     """Check whether there is a file with exactly this key"""
+    ...
+def stat(bucket: str, key: str) -> dict[str, Any] | None:
+    """Say what a path is without reading any content: None for nothing there, else a dict with type "file" or "folder". A file's has key, size, etag, sha256, content_type, modified_at, changed_at (when this version was saved), mode (permission bits such as 0o755, or None), link (True for a symbolic link) and meta; a folder's has key (ending in /) and marker (True when an empty-folder marker keeps it). key "" is the top of the bucket"""
+    ...
+def move(bucket: str, source: str, dest: str, overwrite: bool = ...) -> int:
+    """Rename a file, or a folder and everything in it, within a bucket, on the server without transferring content. A destination holding a file is refused unless overwrite=True. Returns the number of files moved"""
+    ...
+def snapshot(source_bucket: str, source: str, dest_bucket: str, dest: str) -> dict[str, Any]:
+    """Copy a folder ("" for the whole bucket), as it was at one moment, to a new folder that must not exist, on the server: no content is transferred. Returns files, folders, bytes, taken_at, source_bucket, source and manifest (the .knot-snapshot.json written last, so a folder holding it is a complete snapshot)"""
+    ...
+def set_attrs(bucket: str, key: str, mode: int | None = ..., mtime: float | str | None = ...) -> dict[str, Any]:
+    """Change a file's permission bits (0 to 0o777; a link stays a link) or modification time (Unix seconds or an RFC 3339 string), keeping its content and other metadata. Returns the file, as stat gives it; HTTP 412 when the file changed meanwhile"""
     ...

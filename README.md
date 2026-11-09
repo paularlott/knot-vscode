@@ -76,6 +76,10 @@ These are also available on a server node's context menu (right-click).
 | `knot.insecureSkipVerify` | `false`  | Default _skip TLS verification_ option when adding a server (each server keeps its own) |
 | `knot.serverUrl`          | `""`     | Legacy single-server URL, used only to migrate to the multi-server list                 |
 
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute and how to sign the Contributor License Agreement.
+
 ## License
 
 Apache-2.0

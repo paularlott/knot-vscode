@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.3.6
+
+- **File snapshots, moves and details**: new `knot.files` `snapshot`, `move`, `stat` and `set_attrs` stubs, and file dicts carry `changed_at`, `mode`, `link` and `meta`. Requires knot 0.42.0 or later.
+- **Space web port hosts**: new `knot.server.host_label` stub, which builds the host a space's web port is reached at, shortened when it would be too long for DNS. Requires knot 0.42.0 or later.
+- **Sync projects from scripts**: new `knot.files.sync` stub with `start`, `stop`, `list` and `status`, for scripts in a space to run sync projects in its agent. Requires knot 0.42.0 or later.
+- **Method scope from groups**: the `knot.methods` `Server.method` stub defaults `scope` to `""`: a method that lists `groups` is shared, otherwise private, and `scope="private"` with `groups` fails registration. Requires knot 0.42.0 or later.
+- **Request timeouts**: the `knot.apiclient` `get`, `post`, `put`, `delete`, `get_bytes` and `put_bytes` stubs take an optional `timeout`, in seconds, for calls that may take longer than usual. Requires knot 0.42.0 or later.
+
 ## 0.3.5
 
 - **Space restrictions**: new `knot.space.restrict`, `restrictions` and `clear_restrictions` stubs. Requires knot 0.40.0 or later; `secrets_allow` and `secrets_deny` require Knot Pro 0.41.0 or later.

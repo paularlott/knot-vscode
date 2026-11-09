@@ -6,21 +6,21 @@ def configure(url: str, token: str, insecure: bool = ..., ai_url: str = ..., ai_
 def is_configured() -> bool:
     """Check if the client has been configured (explicitly or via env vars)"""
     ...
-def get(path: str, params: dict[str, Any] | None = ...) -> dict[str, Any]:
-    """GET request to the Knot API. params is an optional dict of query parameters"""
+def get(path: str, params: dict[str, Any] | None = ..., timeout: float = ...) -> dict[str, Any]:
+    """GET request to the Knot API. params is an optional dict of query parameters; waits up to timeout seconds if given, otherwise as long as the runtime allows"""
     ...
-def post(path: str, body: dict[str, Any] | None = ...) -> dict[str, Any]:
-    """POST request to the Knot API. body is a dict"""
+def post(path: str, body: dict[str, Any] | None = ..., timeout: float = ...) -> dict[str, Any]:
+    """POST request to the Knot API. body is a dict; waits up to timeout seconds if given, otherwise as long as the runtime allows"""
     ...
-def put(path: str, body: dict[str, Any] | None = ...) -> dict[str, Any]:
-    """PUT request to the Knot API. body is a dict"""
+def put(path: str, body: dict[str, Any] | None = ..., timeout: float = ...) -> dict[str, Any]:
+    """PUT request to the Knot API. body is a dict; waits up to timeout seconds if given, otherwise as long as the runtime allows"""
     ...
-def delete(path: str, headers: dict[str, str] | None = ...) -> dict[str, Any]:
-    """DELETE request to the Knot API, with any extra request headers (such as If-Match)"""
+def delete(path: str, headers: dict[str, str] | None = ..., timeout: float = ...) -> dict[str, Any]:
+    """DELETE request to the Knot API, with any extra request headers (such as If-Match); waits up to timeout seconds if given, otherwise as long as the runtime allows"""
     ...
-def get_bytes(path: str) -> bytes:
-    """GET request to the Knot API returning the response body as bytes (file content)"""
+def get_bytes(path: str, timeout: float = ...) -> bytes:
+    """GET request to the Knot API returning the response body as bytes (file content); waits up to timeout seconds if given, otherwise as long as the runtime allows"""
     ...
-def put_bytes(path: str, data: str | bytes, content_type: str = ...) -> dict[str, Any]:
-    """PUT request to the Knot API with a string or bytes body (file content)"""
+def put_bytes(path: str, data: str | bytes, content_type: str = ..., timeout: float = ...) -> dict[str, Any]:
+    """PUT request to the Knot API with a string or bytes body (file content); waits up to timeout seconds if given, otherwise as long as the runtime allows"""
     ...
