@@ -736,14 +736,31 @@ function getCliPath(): string {
     return vscode.workspace.getConfiguration('knot').get<string>('cliPath', '').trim() || 'knot';
 }
 
-function cliAvailable(cliPath: string): boolean {
+/**
+ * Locate the knot CLI, returning the path to bake into the SSH ProxyCommand,
+ * or undefined if it can't be found.
+ *
+ * On macOS/Linux a bare name is resolved to an absolute path: ssh runs the
+ * ProxyCommand with whatever PATH VS Code was launched with, and after an
+ * auto-update relaunch (or any Dock/launchd start) that is often the minimal
+ * system PATH without e.g. /opt/homebrew/bin, so a bare `knot` stops resolving
+ * and Remote-SSH can't reconnect. The PATH lookup is not resolved through
+ * symlinks, so a package-manager upgrade of the CLI keeps working.
+ */
+function resolveCli(cliPath: string): string | undefined {
     if (path.isAbsolute(cliPath)) {
-        return fs.existsSync(cliPath);
+        return fs.existsSync(cliPath) ? cliPath : undefined;
     }
-    const isWin = process.platform === 'win32';
-    const cmd = isWin ? `where ${JSON.stringify(cliPath)}` : `command -v ${JSON.stringify(cliPath)}`;
-    const r = isWin ? spawnSync('cmd', ['/c', cmd], { stdio: 'ignore' }) : spawnSync('sh', ['-c', cmd], { stdio: 'ignore' });
-    return r.status === 0;
+    if (process.platform === 'win32') {
+        const r = spawnSync('cmd', ['/c', `where ${JSON.stringify(cliPath)}`], { stdio: 'ignore' });
+        return r.status === 0 ? cliPath : undefined;
+    }
+    const r = spawnSync('sh', ['-c', 'command -v "$1"', 'sh', cliPath], { encoding: 'utf8' });
+    if (r.status !== 0) {
+        return undefined;
+    }
+    const resolved = (r.stdout ?? '').trim().split('\n')[0];
+    return path.isAbsolute(resolved) ? resolved : cliPath;
 }
 
 /** Shell-quote a value for use in ~/.ssh/config ProxyCommand; only quotes when needed. */
@@ -796,10 +813,11 @@ async function cmdOpenInVscode(ctx: CommandContext, item?: SpaceItem): Promise<v
         return;
     }
 
-    const cliPath = getCliPath();
-    if (!cliAvailable(cliPath)) {
+    const configuredCli = getCliPath();
+    const cliPath = resolveCli(configuredCli);
+    if (!cliPath) {
         const action = await vscode.window.showErrorMessage(
-            `Knot: CLI "${cliPath}" not found. Install the knot CLI or set "knot.cliPath".`,
+            `Knot: CLI "${configuredCli}" not found. Install the knot CLI or set "knot.cliPath".`,
             'Open Settings',
         );
         if (action === 'Open Settings') {
@@ -899,7 +917,8 @@ async function refreshServerSshHosts(ctx: CommandContext, serverId: string): Pro
     if (spaceNames.length === 0) {
         return;
     }
-    const cliPath = getCliPath();
+    const configuredCli = getCliPath();
+    const cliPath = resolveCli(configuredCli) ?? configuredCli;
     for (const spaceName of spaceNames) {
         try {
             upsertKnotHost(alias, {
