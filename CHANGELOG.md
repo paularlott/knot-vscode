@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.3.7
+
+- **Reconnect after VS Code updates**: Open in VSCode writes the knot CLI's full path into the SSH `ProxyCommand` on macOS and Linux. Remote-SSH can then reconnect after VS Code relaunches itself for an update, when PATH may not include the CLI's folder. Spaces opened with an earlier version pick this up the next time they're opened through the extension.
+
 ## 0.3.6
 
 - **File snapshots, moves and details**: new `knot.files` `snapshot`, `move`, `stat` and `set_attrs` stubs, and file dicts carry `changed_at`, `mode`, `link` and `meta`. Requires knot 0.42.0 or later.
