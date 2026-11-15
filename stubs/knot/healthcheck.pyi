@@ -1,6 +1,6 @@
 """Space health check functions.
 
-Only available in agent-side health check scripts and `knot run-script`.
+Available in every agent-side (in-space) script: health check scripts, startup and shutdown scripts, user scripts and `knot run-script`. Not available in MCP tool execution, event sinks, plugin handlers or AI scripts.
 """
 from typing import Any
 

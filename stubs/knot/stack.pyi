@@ -1,8 +1,8 @@
 """Manage stacks and stack definitions."""
 import builtins
 from typing import Any
-def list_defs() -> builtins.list[dict[str, Any]]:
-    """List stack definitions visible to the current user"""
+def list_defs(include_inactive: bool = ...) -> builtins.list[dict[str, Any]]:
+    """List stack definitions visible to the current user; active ones only unless include_inactive=True"""
     ...
 def get_def(name: str) -> dict[str, Any]:
     """Get a stack definition by name or ID"""
@@ -19,26 +19,29 @@ def delete_def(name: str) -> bool:
 def validate_def(spaces: builtins.list[dict[str, Any]], name: str = ..., description: str = ..., icon_url: str = ..., scope: str = ..., active: bool = ..., groups: builtins.list[str] | None = ..., zones: builtins.list[str] | None = ...) -> dict[str, Any]:
     """Validate a stack definition without saving"""
     ...
-def add_component(stack_definition: dict[str, Any], template: str, name: str, description: str = ..., shell: str = ..., startup_script: str = ..., depends_on: builtins.list[str] | None = ...) -> bool:
+def add_component(stack_definition: str, template: str, name: str, description: str = ..., shell: str = ..., startup_script: str = ..., depends_on: builtins.list[str] | None = ...) -> bool:
     """Add a component (template binding) to an existing stack definition. Resolves template name to ID and rejects duplicate component names. startup_script is a startup script ID; depends_on lists other component names this one depends on."""
     ...
-def remove_component(stack_definition: dict[str, Any], name: str) -> dict[str, Any]:
-    """Remove a component from a stack definition by name. Also cleans up depends_on and port_forward references in sibling components."""
+def remove_component(stack_definition: str, name: str) -> bool:
+    """Remove a component from a stack definition (by name or ID) by component name. Also cleans up depends_on and port_forward references in sibling components."""
     ...
-def create(definition_name: str, prefix: str, stack_name: str | None = ...) -> builtins.list[str]:
-    """Create spaces from a stack definition"""
+def create(definition_name: str, prefix: str, stack_name: str | None = ...) -> dict[str, dict[str, str]]:
+    """Create spaces from a stack definition (by name or ID), named {prefix}-{component}. Returns {"spaces": {component_name: space_id, ...}}"""
     ...
-def delete(stack_name: str) -> bool:
-    """Delete all spaces in a stack"""
+def exists(stack_name: str, user_id: str | None = ...) -> bool:
+    """True if at least one space belongs to the stack. user_id names another user's stack (needs manage spaces)"""
     ...
-def start(stack_name: str) -> bool:
-    """Start all spaces in a stack in dependency order"""
+def delete(stack_name: str, user_id: str | None = ...) -> bool:
+    """Delete all spaces in a stack. user_id names another user's stack (needs manage spaces)"""
     ...
-def stop(stack_name: str) -> bool:
-    """Stop all spaces in a stack in reverse dependency order"""
+def start(stack_name: str, user_id: str | None = ...) -> bool:
+    """Start all spaces in a stack in dependency order. user_id names another user's stack (needs manage spaces)"""
     ...
-def restart(stack_name: str) -> bool:
-    """Restart all spaces in a stack"""
+def stop(stack_name: str, user_id: str | None = ...) -> bool:
+    """Stop all spaces in a stack in reverse dependency order. user_id names another user's stack (needs manage spaces)"""
+    ...
+def restart(stack_name: str, user_id: str | None = ...) -> bool:
+    """Restart all spaces in a stack. user_id names another user's stack (needs manage spaces)"""
     ...
 def list() -> builtins.list[dict[str, Any]]:
     """List stacks by grouping spaces by stack name"""

@@ -26,7 +26,7 @@ class User:
     """Whether the user holds the fixed admin role."""
 
     groups: list[str]
-    """The groups the user belongs to."""
+    """The IDs (not names) of the groups the user belongs to."""
 
     permissions: list[str]
     """Stable snake_case keys of the built-in permissions the user holds ("manage_spaces", "use_mcp_server", ...). Display names are not used — keys never change when wording does."""
@@ -38,6 +38,10 @@ class User:
         """Check a permission. The argument picks the check: an integer is a built-in permission id (the knot.permission constants, e.g. knot.permission.MANAGE_SPACES), a "plugin."-prefixed string is a qualified grant ("plugin.metrics.read"), any other string is a built-in's stable key ("manage_spaces"). Admins pass every check."""
         ...
 
-    def in_group(self, name: str) -> bool:
-        """Check membership of one group."""
+    def in_group(self, group_id: str) -> bool:
+        """Check membership of one group by its ID (not its name); compares against groups."""
         ...
+
+
+user: User
+"""The requesting user, bound as a global in user-created MCP tool scripts only."""

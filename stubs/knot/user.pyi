@@ -10,11 +10,11 @@ def get(user_id: str) -> dict[str, Any]:
 def list(state: str = ..., zone: str = ...) -> builtins.list[dict[str, Any]]:
     """List all users with optional state/zone filter"""
     ...
-def create(username: str, email: str, password: str, active: bool = ..., max_spaces: int = ..., compute_units: int = ..., storage_units: int = ..., max_tunnels: int = ..., ssh_public_key: str = ..., github_username: str = ...) -> str:
+def create(username: str, email: str, password: str, active: bool = ..., max_spaces: int = ..., compute_units: int = ..., storage_units: int = ..., max_tunnels: int = ..., ssh_public_key: str = ..., github_username: str = ..., file_storage_mb: int = ..., max_buckets: int = ...) -> str:
     """Create a new user"""
     ...
-def update(user_id: str, username: str | None = ..., email: str | None = ..., password: str | None = ..., active: bool | None = ..., max_spaces: int | None = ..., ssh_public_key: str | None = ..., github_username: str | None = ...) -> bool:
-    """Update user properties"""
+def update(user_id: str, username: str | None = ..., email: str | None = ..., password: str | None = ..., active: bool | None = ..., max_spaces: int | None = ..., ssh_public_key: str | None = ..., github_username: str | None = ..., compute_units: int | None = ..., storage_units: int | None = ..., max_tunnels: int | None = ..., file_storage_mb: int | None = ..., max_buckets: int | None = ...) -> bool:
+    """Update user properties; arguments left as None (and roles, groups, shell, timezone) keep their current values"""
     ...
 def set_ssh_public_key(ssh_public_key: str, github_username: str | None = ...) -> bool:
     """Set SSH public keys for the current user. Use one public key per line"""
@@ -34,8 +34,8 @@ def unlink_user(user_id: str, linked_user_id: str) -> bool:
 def get_quota(user_id: str) -> dict[str, Any]:
     """Get user quota and usage"""
     ...
-def list_permissions(user_id: str) -> builtins.list[dict[str, Any]]:
-    """List all permissions for a user"""
+def list_permissions(user_id: str) -> builtins.list[int]:
+    """List a user's built-in permissions as integer permission IDs (compare with the knot.permission constants). Plugin grants are separate: see list_plugin_permissions()"""
     ...
 
 def list_plugin_permissions(user_id: str) -> builtins.list[str]:

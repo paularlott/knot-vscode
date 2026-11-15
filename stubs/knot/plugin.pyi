@@ -9,6 +9,6 @@ in-process bridge between plugins of the same trust domain.
 
 from typing import Any
 
-def call(plugin: str, handler: str, params: dict[str, Any] = ..., method: str = "GET") -> dict[str, Any]:
+def call(plugin: str, handler: str, params: dict[str, Any] | None = ..., method: str = "GET") -> dict[str, Any]:
     """Call a plugin's [[tool.knot.handlers]]-declared handler as the requesting user. params become the query string (GET, the default) or a JSON body (POST). Returns the handler's JSON answer as a dict; raises on a refused gate (permission denied), an undeclared handler, or an unknown plugin."""
     ...

@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.3.8
+
+- **Full knot 0.45.0 API**: completions and hover docs for the whole scripting API, including the new `knot.event_sink`, `knot.mcp_server` and `knot.tunnel` libraries and every permission constant.
+- **Accurate stubs**: many argument lists and return types corrected to match what knot actually does, so completions and type checks line up with your scripts.
+- **Failures raise**: `knot.space.run`, `read_file` and `write_file` are documented as raising on failure, as they do from knot 0.45.0; pass `check=False` to `run` to get the result instead.
+
 ## 0.3.7
 
 - **Reconnect after VS Code updates**: Open in VSCode writes the knot CLI's full path into the SSH `ProxyCommand` on macOS and Linux. Remote-SSH can then reconnect after VS Code relaunches itself for an update, when PATH may not include the CLI's folder. Spaces opened with an earlier version pick this up the next time they're opened through the extension.

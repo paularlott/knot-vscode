@@ -3,8 +3,8 @@
 import builtins
 from typing import Any, Optional
 
-def list(all_zones: bool = ...) -> builtins.list[dict[str, Any]]:
-    """List spaces visible to the current user. Defaults to the current server's zone; pass all_zones=True to include other zones."""
+def list(all_zones: bool = ..., user_id: str | None = ...) -> builtins.list[dict[str, Any]]:
+    """List spaces visible to the current user. Defaults to the current server's zone; pass all_zones=True to include other zones. user_id lists another user's spaces (needs manage spaces; empty without it)."""
     ...
 def get(name: str) -> dict[str, Any]:
     """Get space details as a dict"""
@@ -17,14 +17,14 @@ def create(
     depends_on: builtins.list[str] | None = ...,
     stack: str = ...,
     selected_node_id: str = ...,
-    alt_names: builtins.list[str] | None = ...,
+    alt_names: builtins.list[dict[str, Any]] | None = ...,
     icon_url: str = ...,
     custom_fields: builtins.list[dict[str, str]] | None = ...,
     startup_script_id: str = ...,
     ip_address: str = ...,
     start_on_create: bool = ...,
 ) -> str:
-    """Create a new space and return its ID. ip_address sets the static IP for bridged KVM templates (validated against the template's range); unused by other platforms."""
+    """Create a new space and return its ID. alt_names is a list of {"name": str, "port": int} dicts. ip_address sets the static IP for bridged KVM templates (validated against the template's range); unused by other platforms."""
     ...
 def update(
     name: str,
@@ -35,7 +35,7 @@ def update(
     depends_on: builtins.list[str] | None = ...,
     stack: str | None = ...,
     selected_node_id: str | None = ...,
-    alt_names: builtins.list[str] | None = ...,
+    alt_names: builtins.list[dict[str, Any]] | None = ...,
     icon_url: str | None = ...,
     custom_fields: builtins.list[dict[str, str]] | None = ...,
     startup_script_id: str | None = ...,
@@ -48,6 +48,9 @@ def delete(name: str) -> bool:
     ...
 def start(name: str) -> bool:
     """Start a space by name"""
+    ...
+def stop_for_user(user: str) -> bool:
+    """Stop every running space a user (ID or username) owns in this server's zone; shared spaces are left alone. Another user's needs the manage users permission"""
     ...
 def stop(name: str) -> bool:
     """Stop a space by name"""
@@ -67,8 +70,8 @@ def wait_for_start(name: str, timeout: int = 30, interval: int = 2) -> bool:
 def usage_current(name: str) -> dict[str, Any]:
     """Get the current resource usage point for a space"""
     ...
-def usage_history(name: str, range: str = ...) -> builtins.list[dict[str, Any]]:
-    """Get historical resource usage for a space"""
+def usage_history(name: str, range: str = ...) -> dict[str, Any]:
+    """Get historical resource usage for a space: a dict with space_id, range, bucket_kind and points. range is "1h" (minute samples, the default) or "7d" (daily samples)."""
     ...
 def set_description(name: str, description: str) -> bool:
     """Set space description"""
@@ -120,14 +123,14 @@ def clear_restrictions(name: str) -> dict[str, Any]:
 def transfer(name: str, user_id: str) -> bool:
     """Transfer space to another user (user_id can be username, email, or UUID)"""
     ...
-def share(name: str, user_ids: builtins.list[str]) -> bool:
-    """Share space with one or more users (user_ids can be usernames, emails, or UUIDs)"""
+def share(name: str, user_ids: str | builtins.list[str]) -> bool:
+    """Share space with one or more users; user_ids is one user or a list (usernames, emails, or UUIDs)"""
     ...
 def unshare(name: str, user_id: str | None = ...) -> bool:
     """Remove a space share, optionally for a specific user"""
     ...
-def run(name: str, command: str, args: builtins.list[str] | None = ..., timeout: int = ..., workdir: str = ...) -> dict[str, Any]:
-    """Execute a command in a space"""
+def run(name: str, command: str, args: builtins.list[str] | None = ..., timeout: int = ..., workdir: str = ..., check: bool = ...) -> str | dict[str, Any]:
+    """Execute a command in a space. With check=True (the default) returns the output as str and raises if the command fails (non-zero exit, timeout as exit code 124, no shell), with the error, exit code and output in the message. With check=False never raises for a failed command and returns a dict with output, exit_code, success and error (empty on success)."""
     ...
 def run_script(name: str, script_name: str, args: builtins.list[str] | None = ...) -> dict[str, Any]:
     """Execute a script in a space"""
@@ -136,10 +139,10 @@ def eval(name: str, code: str, args: builtins.list[str] | None = ...) -> dict[st
     """Execute inline Scriptling code in a running space (no stored script required)"""
     ...
 def read_file(name: str, file_path: str, offset: int = ..., limit: int = ...) -> str:
-    """Read file contents from a running space; offset/limit select a 1-based line range"""
+    """Read file contents from a running space; offset/limit select a 1-based line range. Raises if the agent cannot read the file (for example it does not exist)."""
     ...
 def write_file(name: str, file_path: str, content: str, mode: str = ..., mtime_ns: int | None = ..., file_perm: int | None = ...) -> bool:
-    """Write content to a file in a running space (overwrite/append/prepend). Optional mtime_ns (Unix nanoseconds) and file_perm (int bits like 0o644) are applied after the write so the destination matches a source file's metadata — useful for sync tools."""
+    """Write content to a file in a running space (overwrite/append/prepend). Optional mtime_ns (Unix nanoseconds) and file_perm (int bits like 0o644) are applied after the write so the destination matches a source file's metadata — useful for sync tools. Raises if the agent cannot write the file."""
     ...
 def grep(
     name: str,
@@ -251,7 +254,7 @@ def port_forward(source_space: str, local_port: int, remote_space: str, remote_p
     """Forward a local port to a remote port. remote_space is a target reference: a space or pool name you own, another user's space or pool as user--space (only ports its template declares shared), or a space ID."""
     ...
 def port_list(name: str) -> builtins.list[dict[str, Any]]:
-    """List active port forwards for a space"""
+    """List port forwards for a space: local_port, space, remote_port, persistent, mode ("direct", "relay" or "—" before first use) and the throttle settings latency_ms, jitter_ms, bandwidth_kb, timeout_ms and down. For a stopped space its saved persistent forwards, with mode "" and zero throttle settings."""
     ...
 def port_stop(name: str, local_port: int) -> bool:
     """Stop a port forward"""
@@ -259,8 +262,8 @@ def port_stop(name: str, local_port: int) -> bool:
 def port_throttle(name: str, local_port: int, latency_ms: int = ..., jitter_ms: int = ..., bandwidth_kb: int = ..., timeout_ms: int = ..., down: bool = ..., reset: bool = ...) -> bool:
     """Apply latency, jitter, bandwidth limits, connection timeout, and/or traffic blocking (down) to a port forward. Pass reset=True to clear."""
     ...
-def port_apply(source_space: str, forwards: builtins.list[dict[str, Any]]) -> bool:
-    """Replace all port forwards for a space"""
+def port_apply(source_space: str, forwards: builtins.list[dict[str, Any]]) -> dict[str, Any]:
+    """Replace all port forwards for a space. Returns a dict with applied and stopped (lists of port_list-shaped entries, or None when empty) and errors (a list, absent when there were none)."""
     ...
 def tunnel_start(space: str, protocol: str, port: int, name: str, server: str = ..., token: str = ...) -> str:
     """Start an agent-owned web tunnel in a space, exposing <port> as <user>--<name>.<domain>. Owned by the space's agent; not persisted. Pass both server and token to create the tunnel on a different knot server the space can reach."""
@@ -270,4 +273,13 @@ def tunnel_list(space: str) -> builtins.list[dict[str, Any]]:
     ...
 def tunnel_stop(space: str, name: str) -> bool:
     """Stop an agent-owned web tunnel in a space by name"""
+    ...
+def emit_event(name: str, event_type: str, payload: dict[str, Any] | None = ...) -> bool:
+    """Raise a custom event for a space (name or ID) as if the space raised it: it belongs to the owner and carries the space; "custom." is prepended to event_type. Use knot.event.emit for an event with no space"""
+    ...
+def list_methods() -> builtins.list[dict[str, Any]]:
+    """List the JSON-RPC methods running spaces offer that you may call: name, local_name, description, keywords, scope ("private"/"shared"), groups, mcp_tool, events, event_sinks, params_schema, result_schema, owner_id, owner, provider_count"""
+    ...
+def call_method(method: str, params: dict[str, Any] | builtins.list[Any] | None = ..., space: str | None = ..., timeout: float = ...) -> Any:
+    """Call a space method over JSON-RPC and return its result. space (name or ID) pins the call to one providing space, e.g. a leased pool member; otherwise the server picks one. Raises with the JSON-RPC error message when the call fails"""
     ...

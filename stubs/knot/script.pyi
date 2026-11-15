@@ -16,10 +16,10 @@ def get_by_name(name: str) -> dict[str, Any]:
 def get_content(name: str, script_type: str = ...) -> str:
     """Get script content by name and type"""
     ...
-def create(name: str, content: str, description: str = ..., owner: str | None = ..., groups: builtins.list[str] | None = ..., zones: builtins.list[str] | None = ..., **kwargs: Any) -> str:
-    """Create a script. Use owner='current' for an own script."""
+def create(name: str, content: str, description: str = ..., owner: str | None = ..., groups: builtins.list[str] | None = ..., zones: builtins.list[str] | None = ..., active: bool = ..., script_type: str = ..., mcp_input_schema_toml: str = ..., mcp_keywords: builtins.list[str] | None = ..., discoverable: bool = ...) -> str:
+    """Create a script and return its ID. Use owner='current' for an own script; omit owner for a global script. script_type is "script" (default), "lib" or "tool"; mcp_input_schema_toml, mcp_keywords and discoverable describe an MCP tool."""
     ...
-def update(script_id: str, name: str | None = ..., content: str | None = ..., description: str | None = ..., groups: builtins.list[str] | None = ..., **kwargs: Any) -> bool:
+def update(script_id: str, name: str | None = ..., content: str | None = ..., description: str | None = ..., groups: builtins.list[str] | None = ..., zones: builtins.list[str] | None = ..., active: bool | None = ..., script_type: str | None = ..., mcp_input_schema_toml: str | None = ..., mcp_keywords: builtins.list[str] | None = ..., discoverable: bool | None = ...) -> bool:
     """Update a script while preserving fields not passed"""
     ...
 def delete(script_id: str) -> bool:
