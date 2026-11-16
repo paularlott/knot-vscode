@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.3.9
+
+- **Project folder per space**: the first time you open a space in VS Code, you're asked which folder to open, such as `~/my-project`, with your home folder filled in. The answer is remembered for that space, so the window, and anything run in its terminal, starts in the project instead of `~`. Change it later with **Set Project Folder** on the space's right-click menu.
+
 ## 0.3.8
 
 - **Full knot 0.45.0 API**: completions and hover docs for the whole scripting API, including the new `knot.event_sink`, `knot.mcp_server` and `knot.tunnel` libraries and every permission constant.

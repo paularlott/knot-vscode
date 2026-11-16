@@ -10,6 +10,7 @@ import { PoolItem, SpaceItem, SpacesTreeProvider, StackItem } from './provider/s
 import { createKnotTerminal } from './terminal/knotTerminal';
 import { createKnotLogsTerminal } from './terminal/spaceLogsTerminal';
 import { upsertKnotHost, removeKnotHost, removeKnotAliasBlock, aliasForServer, listKnotHostSpaces } from './ssh';
+import { ProjectFolders, normalizeProjectFolder, resolveProjectFolder } from './projectFolders';
 
 export interface CommandContext {
     store: ServerStore;
@@ -17,6 +18,7 @@ export interface CommandContext {
     reload: () => Promise<void>;
     reloadServer: (id: string) => Promise<void>;
     ensureConnected: (id: string) => Promise<ConnectedServer | undefined>;
+    projectFolders: ProjectFolders;
 }
 
 function defaultShell(): string {
@@ -56,6 +58,7 @@ export function registerCommands(ctx: CommandContext): vscode.Disposable[] {
         vscode.commands.registerCommand('knot.openCodeServer', (item?: SpaceItem) => cmdOpenUrl(ctx, item, 'code-server')),
         vscode.commands.registerCommand('knot.openInBrowser', (item?: SpaceItem) => cmdOpenUrl(ctx, item, 'space')),
         vscode.commands.registerCommand('knot.openInVscode', (item?: SpaceItem) => cmdOpenInVscode(ctx, item)),
+        vscode.commands.registerCommand('knot.setProjectFolder', (item?: SpaceItem) => cmdSetProjectFolder(ctx, item)),
         vscode.commands.registerCommand('knot.openWebPort', (url?: string) => {
             if (url) {
                 void vscode.env.openExternal(vscode.Uri.parse(url));
@@ -125,6 +128,7 @@ async function cmdRemoveServer(ctx: CommandContext, serverId?: string): Promise<
         return;
     }
     await ctx.store.remove(server.id);
+    await ctx.projectFolders.clearServer(server.id);
     try {
         removeKnotAliasBlock(aliasForServer(server.id));
     } catch {
@@ -473,6 +477,7 @@ async function cmdDeleteSpace(ctx: CommandContext, item?: SpaceItem): Promise<vo
         async () => {
             try {
                 await conn.client.deleteSpace(space.space.space_id);
+                await ctx.projectFolders.set(space.serverId, space.space.space_id, undefined);
                 // Prune the space's SSH host (if any) from ~/.ssh/config.
                 try {
                     const alias = aliasForServer(space.serverId);
@@ -837,6 +842,15 @@ async function cmdOpenInVscode(ctx: CommandContext, item?: SpaceItem): Promise<v
         return;
     }
 
+    // The first open asks for the project folder (home by default); later opens reuse it.
+    let folder = ctx.projectFolders.get(space.serverId, space.space.space_id);
+    if (folder === undefined) {
+        folder = await promptProjectFolder(ctx, space, 'Open in VSCode');
+        if (folder === undefined) {
+            return;
+        }
+    }
+
     const alias = aliasForServer(server.id);
     const host = sshHostForSpace(alias, space.space.name);
     const proxy = sshProxyCommand(cliPath, server, space.space.name);
@@ -848,9 +862,51 @@ async function cmdOpenInVscode(ctx: CommandContext, item?: SpaceItem): Promise<v
         return;
     }
 
-    const remotePath = space.space.username ? `/home/${space.space.username}` : '/';
+    const remotePath = resolveProjectFolder(folder, spaceHome(space));
     const uri = `vscode-remote://ssh-remote+${host}${remotePath}`;
     await openRemote(uri);
+}
+
+/** The user's home folder in a space, where "Open in VSCode" opens by default. */
+function spaceHome(space: SpaceItem): string {
+    return space.space.username ? `/home/${space.space.username}` : '/';
+}
+
+/**
+ * Ask for the folder "Open in VSCode" opens in a space and save it; blank means the home folder.
+ * Returns the saved folder, or undefined if the user cancelled.
+ */
+async function promptProjectFolder(ctx: CommandContext, space: SpaceItem, title: string): Promise<string | undefined> {
+    const current = ctx.projectFolders.get(space.serverId, space.space.space_id);
+    const input = await vscode.window.showInputBox({
+        title: `${title}: project folder for "${space.space.name}"`,
+        prompt: `The folder to open, e.g. ~/my-project or /workspace/app. Leave as ~ for the home folder (${spaceHome(space)}). Change it later with Set Project Folder.`,
+        value: current ?? '~',
+        ignoreFocusOut: true,
+    });
+    if (input === undefined) {
+        return undefined;
+    }
+    const folder = normalizeProjectFolder(input) || '~';
+    await ctx.projectFolders.set(space.serverId, space.space.space_id, folder);
+    return folder;
+}
+
+/** Change the folder "Open in VSCode" opens in this space. */
+async function cmdSetProjectFolder(ctx: CommandContext, item?: SpaceItem): Promise<void> {
+    const space = item ?? (await pickSpace(ctx));
+    if (!space) {
+        return;
+    }
+    const folder = await promptProjectFolder(ctx, space, 'Set Project Folder');
+    if (folder === undefined) {
+        return;
+    }
+    vscode.window.showInformationMessage(
+        folder === '~'
+            ? `Knot: "${space.space.name}" will open in the home folder.`
+            : `Knot: "${space.space.name}" will open in ${resolveProjectFolder(folder, spaceHome(space))}.`,
+    );
 }
 
 /**

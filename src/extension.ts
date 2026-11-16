@@ -4,6 +4,7 @@ import { ServerStore } from './serverStore';
 import type { ServerStatus, ServerView } from './provider/spacesTreeProvider';
 import { SpacesTreeProvider } from './provider/spacesTreeProvider';
 import { registerCommands } from './commands';
+import { ProjectFolders } from './projectFolders';
 import { KnotFileSystem, SCHEME } from './files/knotFileSystem';
 import { FilesTreeProvider } from './files/filesTreeProvider';
 import { registerFilesCommands } from './files/filesCommands';
@@ -171,7 +172,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         await Promise.all(store.list().map((s) => reloadServer(s.id)));
     }
 
-    context.subscriptions.push(...registerCommands({ store, tree, reload, reloadServer, ensureConnected }));
+    context.subscriptions.push(...registerCommands({
+        store,
+        tree,
+        reload,
+        reloadServer,
+        ensureConnected,
+        projectFolders: new ProjectFolders(context.globalState),
+    }));
 
     // Reconcile when servers are added / removed / edited.
     context.subscriptions.push(
